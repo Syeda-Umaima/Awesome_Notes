@@ -1,0 +1,60 @@
+name: awesome_notes
+description: "A new Flutter project."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.8.0 <4.0.0'
+  flutter: '>=3.19.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+  font_awesome_flutter: ^10.7.0
+  # Use compatible versions
+  flutter_quill: ^11.5.0
+  intl: ^0.20.2
+  # Media & System
+  image_picker: ^1.1.2
+  speech_to_text: ^7.0.0
+  path_provider: ^2.1.5
+  url_launcher: ^6.3.0
+  # State Management
+  provider: ^6.1.2
+  # Firebase
+  firebase_core: ^4.2.0
+  firebase_auth: ^6.1.1
+  cloud_firestore: ^6.0.3
+  google_sign_in: ^5.4.0
+  # Local Storage
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  hive_generator: ^2.0.1
+  build_runner: ^2.4.13
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/person.png
+
+  fonts:
+    - family: Poppins
+      fonts:
+        - asset: assets/fonts/poppins/Poppins-Regular.ttf
+        - asset: assets/fonts/poppins/Poppins-Italic.ttf
+          style: italic
+        - asset: assets/fonts/poppins/Poppins-Bold.ttf
+          weight: 700
+    - family: Fredoka
+      fonts:
+        - asset: assets/fonts/fredoka/Fredoka-Regular.ttf
+        - asset: assets/fonts/fredoka/Fredoka-Bold.ttf
+          weight: 700
