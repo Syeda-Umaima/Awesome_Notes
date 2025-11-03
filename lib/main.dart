@@ -3,6 +3,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_quill/flutter_quill.dart' as quill;
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'change_notifiers/notes_provider.dart';
 import 'change_notifiers/registration_controller.dart';
@@ -47,7 +49,19 @@ class MyApp extends StatelessWidget {
           useMaterial3: true,
           fontFamily: 'Fredoka',
         ),
-        home: const AuthWrapper(), // ✅ Use AuthWrapper below
+        // ✅ Add these localizations to fix FlutterQuill error
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          quill.FlutterQuillLocalizations.delegate, // ✅ THIS IS THE FIX!
+        ],
+        supportedLocales: const [
+          Locale('en', 'US'),
+          Locale('en', 'GB'),
+          // Add more locales as needed
+        ],
+        home: const AuthWrapper(),
       ),
     );
   }
@@ -60,7 +74,7 @@ class AuthWrapper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<User?>(
-      stream: AuthService.userStream, // ✅ Correct usage
+      stream: AuthService.userStream,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(

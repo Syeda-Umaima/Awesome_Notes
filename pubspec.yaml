@@ -1,5 +1,7 @@
 name: awesome_notes
+
 description: "A new Flutter project."
+
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -9,6 +11,8 @@ environment:
 
 dependencies:
   flutter:
+    sdk: flutter
+  flutter_localizations:  # ✅ ADD THIS
     sdk: flutter
 
   cupertino_icons: ^1.0.8

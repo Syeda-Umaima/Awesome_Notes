@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_quill/flutter_quill.dart';
+import 'package:flutter_quill/flutter_quill.dart' as quill;
 
 import '../core/constants.dart';
 
@@ -9,7 +9,7 @@ class NoteToolbar extends StatelessWidget {
     super.key,
   });
 
-  final QuillController controller;
+  final quill.QuillController controller;
 
   @override
   Widget build(BuildContext context) {
@@ -30,50 +30,62 @@ class NoteToolbar extends StatelessWidget {
           ),
         ],
       ),
-      // Simple toolbar with basic buttons
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
           children: [
-            // Add your custom toolbar buttons here
-            _buildToolbarButton(Icons.format_bold, () {
-              controller.formatSelection(Attribute.bold);
-            }),
-            _buildToolbarButton(Icons.format_italic, () {
-              controller.formatSelection(Attribute.italic);
-            }),
-            _buildToolbarButton(Icons.format_underlined, () {
-              controller.formatSelection(Attribute.underline);
-            }),
-            _buildToolbarButton(Icons.format_strikethrough, () {
-              controller.formatSelection(Attribute.strikeThrough);
-            }),
-            _buildToolbarButton(Icons.format_list_bulleted, () {
-              controller.formatSelection(Attribute.ul);
-            }),
-            _buildToolbarButton(Icons.format_list_numbered, () {
-              controller.formatSelection(Attribute.ol);
-            }),
-            _buildToolbarButton(Icons.undo, () {
-              controller.undo();
-            }),
-            _buildToolbarButton(Icons.redo, () {
-              controller.redo();
-            }),
+            quill.QuillToolbarToggleStyleButton(
+              attribute: quill.Attribute.bold,
+              controller: controller,
+            ),
+            quill.QuillToolbarToggleStyleButton(
+              attribute: quill.Attribute.italic,
+              controller: controller,
+            ),
+            quill.QuillToolbarToggleStyleButton(
+              attribute: quill.Attribute.underline,
+              controller: controller,
+            ),
+            quill.QuillToolbarToggleStyleButton(
+              attribute: quill.Attribute.strikeThrough,
+              controller: controller,
+            ),
+            const VerticalDivider(),
+            quill.QuillToolbarColorButton(
+              controller: controller,
+              isBackground: false,
+            ),
+            quill.QuillToolbarColorButton(
+              controller: controller,
+              isBackground: true,
+            ),
+            const VerticalDivider(),
+            quill.QuillToolbarToggleStyleButton(
+              attribute: quill.Attribute.ul,
+              controller: controller,
+            ),
+            quill.QuillToolbarToggleStyleButton(
+              attribute: quill.Attribute.ol,
+              controller: controller,
+            ),
+            const VerticalDivider(),
+            quill.QuillToolbarHistoryButton(
+              controller: controller,
+              isUndo: true,
+            ),
+            quill.QuillToolbarHistoryButton(
+              controller: controller,
+              isUndo: false,
+            ),
+            const VerticalDivider(),
+            quill.QuillToolbarClearFormatButton(
+              controller: controller,
+            ),
+            quill.QuillToolbarSearchButton(
+              controller: controller,
+            ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildToolbarButton(IconData icon, VoidCallback onPressed) {
-    return IconButton(
-      icon: Icon(icon),
-      onPressed: onPressed,
-      iconSize: 20,
-      constraints: const BoxConstraints(
-        minWidth: 40,
-        minHeight: 40,
       ),
     );
   }

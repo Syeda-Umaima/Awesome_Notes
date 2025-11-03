@@ -59,6 +59,7 @@ class NoteCard extends StatelessWidget {
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             if (note.title != null) ...[
               Text(
@@ -73,11 +74,13 @@ class NoteCard extends StatelessWidget {
               const SizedBox(height: 8),
             ],
             if (note.content != null) ...[
-              Text(
-                note.content!,
-                style: const TextStyle(fontSize: 14),
-                maxLines: isInGrid ? 4 : 2,
-                overflow: TextOverflow.ellipsis,
+              Flexible(
+                child: Text(
+                  note.content!,
+                  style: const TextStyle(fontSize: 14),
+                  maxLines: isInGrid ? 4 : 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
               const SizedBox(height: 8),
             ],
