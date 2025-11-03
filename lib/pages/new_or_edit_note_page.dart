@@ -12,6 +12,7 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:hive/hive.dart';
 
 import '../change_notifiers/new_note_controller.dart';
+import '../change_notifiers/notes_provider.dart';
 import '../core/constants.dart';
 import '../core/dialogs.dart';
 import '../models/note_model.dart';
@@ -238,53 +239,62 @@ class _NewOrEditNotePageState extends State<NewOrEditNotePage> {
 
   // 💾 Save note properly to Hive
   Future<void> _saveNote() async {
-    // Save to cloud (existing functionality)
-    newNoteController.saveNote(context);
+  try {
+    final noteBox = Hive.box<NoteModel>('notesbox');
+    final plainText = quillController.document.toPlainText().trim();
+    final voiceText = _isListening ? plainText : null;
 
-    try {
-      final noteBox = Hive.box<NoteModel>('notesBox');
-      final plainText = quillController.document.toPlainText().trim();
-      final voiceText = _isListening ? plainText : null;
+    String? storedImagePath;
+    if (kIsWeb && webImageBytes != null) {
+      storedImagePath = base64Encode(webImageBytes!);
+    } else if (!kIsWeb && imagePath != null) {
+      storedImagePath = imagePath;
+    }
 
-      String? storedImagePath;
-
-      if (kIsWeb && webImageBytes != null) {
-        // Store base64 string for web
-        storedImagePath = base64Encode(webImageBytes!);
-      } else if (!kIsWeb && imagePath != null) {
-        // Store local file path for mobile
-        storedImagePath = imagePath;
-      }
-
-      final hiveNote = NoteModel(
-        title: titleController.text.trim().isEmpty
-            ? null
-            : titleController.text.trim(),
+    NoteModel hiveNote;
+    if (widget.isNewNote) {
+      hiveNote = NoteModel(
+        title: titleController.text.trim().isEmpty ? null : titleController.text.trim(),
         description: plainText.isEmpty ? null : plainText,
+        contentJson: jsonEncode(quillController.document.toDelta().toJson()),
+        dateCreated: DateTime.now().microsecondsSinceEpoch,
+        dateModified: DateTime.now().microsecondsSinceEpoch,
         imagePath: storedImagePath,
         voiceText: voiceText,
-        createdAt: DateTime.now(),
+        tags: newNoteController.tags,
       );
-
-      // ✅ Save to Hive properly with await
       await noteBox.add(hiveNote);
+    } else {
+      hiveNote = newNoteController.noteModel!;
+      hiveNote
+        ..title = titleController.text.trim().isEmpty ? null : titleController.text.trim()
+        ..description = plainText.isEmpty ? null : plainText
+        ..contentJson = jsonEncode(quillController.document.toDelta().toJson())
+        ..dateModified = DateTime.now().microsecondsSinceEpoch
+        ..imagePath = storedImagePath
+        ..voiceText = voiceText
+        ..tags = newNoteController.tags;
+      await hiveNote.save();
+    }
 
-      debugPrint('📦 Hive has ${noteBox.length} notes after saving');
+    if (mounted) {
+      context.read<NotesProvider>().setNotes(noteBox.values.toList());
+    }
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('✅ Note saved locally & to cloud!')),
-        );
-      }
-    } catch (e) {
-      debugPrint('❌ Error saving to Hive: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('⚠️ Error saving note: $e')),
-        );
-      }
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('✅ Note saved successfully!')),
+      );
+    }
+  } catch (e) {
+    debugPrint('❌ Error saving to Hive: $e');
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('⚠️ Error saving note: $e')),
+      );
     }
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -369,7 +379,7 @@ class _NewOrEditNotePageState extends State<NewOrEditNotePage> {
                 ),
               ),
 
-              NoteMetadata(note: newNoteController.note),
+              NoteMetadata(note: newNoteController.noteModel),
 
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 8.0),
@@ -416,7 +426,7 @@ class _NewOrEditNotePageState extends State<NewOrEditNotePage> {
               Expanded(
                 child: Selector<NewNoteController, bool>(
                   selector: (_, c) => c.readOnly,
-                  builder: (_, readOnly, __) => Column(
+                  builder: (_, readOnly, _) => Column(
                     children: [
                       Expanded(
                         child: quill.QuillEditor(

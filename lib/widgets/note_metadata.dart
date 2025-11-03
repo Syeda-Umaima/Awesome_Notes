@@ -1,3 +1,4 @@
+// lib/widgets/note_metadata.dart
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
@@ -6,7 +7,7 @@ import '../change_notifiers/new_note_controller.dart';
 import '../core/constants.dart';
 import '../core/dialogs.dart';
 import '../core/utils.dart';
-import '../models/note.dart';
+import '../models/note_model.dart';
 import 'note_icon_button.dart';
 import 'note_tag.dart';
 
@@ -15,7 +16,7 @@ class NoteMetadata extends StatefulWidget {
     required this.note,
     super.key,
   });
-  final Note? note;
+  final NoteModel? note;
 
   @override
   State<NoteMetadata> createState() => _NoteMetadataState();
@@ -51,7 +52,7 @@ class _NoteMetadataState extends State<NoteMetadata> {
               Expanded(
                 flex: 5,
                 child: Text(
-                  toLongDate(widget.note!.dateModified),
+                  toLongDate(widget.note!.dateModified ?? widget.note!.dateCreated ?? 0),
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     color: gray900,
@@ -75,7 +76,7 @@ class _NoteMetadataState extends State<NoteMetadata> {
               Expanded(
                 flex: 5,
                 child: Text(
-                  toLongDate(widget.note!.dateCreated),
+                  toLongDate(widget.note!.dateCreated ?? 0),
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     color: gray900,
@@ -117,7 +118,7 @@ class _NoteMetadataState extends State<NoteMetadata> {
               flex: 5,
               child: Selector<NewNoteController, List<String>>(
                 selector: (_, newNoteController) => newNoteController.tags,
-                builder: (_, tags, __) => tags.isEmpty
+                builder: (_, tags, _) => tags.isEmpty
                     ? const Text(
                         'No tags added',
                         style: TextStyle(

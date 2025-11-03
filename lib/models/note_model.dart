@@ -1,3 +1,4 @@
+// lib/models/note_model.dart
 import 'package:hive/hive.dart';
 
 part 'note_model.g.dart';
@@ -17,13 +18,25 @@ class NoteModel extends HiveObject {
   String? voiceText;
 
   @HiveField(4)
-  DateTime createdAt;
+  int? dateCreated;
+
+  @HiveField(5)
+  int? dateModified;
+
+  @HiveField(6)
+  String? contentJson;
+
+  @HiveField(7)
+  List<String>? tags;
 
   NoteModel({
     this.title,
     this.description,
     this.imagePath,
     this.voiceText,
-    DateTime? createdAt,
-  }) : createdAt = createdAt ?? DateTime.now();
+    this.dateCreated,
+    this.dateModified,
+    this.contentJson,
+    this.tags,
+  });
 }

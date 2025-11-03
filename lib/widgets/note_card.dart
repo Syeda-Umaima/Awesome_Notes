@@ -1,12 +1,14 @@
+// lib/widgets/note_card.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 import '../change_notifiers/new_note_controller.dart';
 import '../change_notifiers/notes_provider.dart';
 import '../core/constants.dart';
 import '../core/dialogs.dart';
 import '../core/utils.dart';
-import '../models/note.dart';
+import '../models/note_model.dart';
 import 'note_tag.dart';
 import '../pages/new_or_edit_note_page.dart';
 
@@ -17,7 +19,7 @@ class NoteCard extends StatelessWidget {
     super.key,
   });
 
-  final Note note;
+  final NoteModel note;
   final bool isInGrid;
 
   @override
@@ -28,7 +30,7 @@ class NoteCard extends StatelessWidget {
           context,
           MaterialPageRoute(
             builder: (context) => ChangeNotifierProvider(
-              create: (_) => NewNoteController()..note = note,
+              create: (context) => NewNoteController()..noteModel = note,
               child: const NewOrEditNotePage(isNewNote: false),
             ),
           ),
@@ -41,7 +43,8 @@ class NoteCard extends StatelessWidget {
         );
 
         if (shouldDelete == true && context.mounted) {
-          context.read<NotesProvider>().deleteNote(note);
+          context.read<NotesProvider>().removeNote(note);
+          await Hive.box<NoteModel>('notesbox').delete(note.key);
         }
       },
       child: Container(
@@ -73,10 +76,10 @@ class NoteCard extends StatelessWidget {
               ),
               const SizedBox(height: 8),
             ],
-            if (note.content != null) ...[
+            if (note.description != null || note.voiceText != null) ...[
               Flexible(
                 child: Text(
-                  note.content!,
+                  note.description ?? note.voiceText ?? 'No content',
                   style: const TextStyle(fontSize: 14),
                   maxLines: isInGrid ? 4 : 2,
                   overflow: TextOverflow.ellipsis,
@@ -95,7 +98,7 @@ class NoteCard extends StatelessWidget {
               const SizedBox(height: 8),
             ],
             Text(
-              toShortDate(note.dateModified),
+              toShortDate(note.dateModified ?? note.dateCreated ?? DateTime.now().microsecondsSinceEpoch),
               style: const TextStyle(
                 fontSize: 12,
                 color: gray500,

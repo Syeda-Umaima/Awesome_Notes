@@ -21,14 +21,17 @@ class NoteModelAdapter extends TypeAdapter<NoteModel> {
       description: fields[1] as String?,
       imagePath: fields[2] as String?,
       voiceText: fields[3] as String?,
-      createdAt: fields[4] as DateTime?,
+      dateCreated: fields[4] as int?,
+      dateModified: fields[5] as int?,
+      contentJson: fields[6] as String?,
+      tags: (fields[7] as List?)?.cast<String>(),
     );
   }
 
   @override
   void write(BinaryWriter writer, NoteModel obj) {
     writer
-      ..writeByte(5)
+      ..writeByte(8)
       ..writeByte(0)
       ..write(obj.title)
       ..writeByte(1)
@@ -38,7 +41,13 @@ class NoteModelAdapter extends TypeAdapter<NoteModel> {
       ..writeByte(3)
       ..write(obj.voiceText)
       ..writeByte(4)
-      ..write(obj.createdAt);
+      ..write(obj.dateCreated)
+      ..writeByte(5)
+      ..write(obj.dateModified)
+      ..writeByte(6)
+      ..write(obj.contentJson)
+      ..writeByte(7)
+      ..write(obj.tags);
   }
 
   @override

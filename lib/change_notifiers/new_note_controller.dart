@@ -1,23 +1,27 @@
+// lib/change_notifiers/new_note_controller.dart
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:provider/provider.dart';
 
-import '../models/note.dart';
+import '../models/note_model.dart';
 import 'notes_provider.dart';
 
 class NewNoteController extends ChangeNotifier {
-  Note? _note;
-  set note(Note? value) {
-    _note = value;
-    _title = _note!.title ?? '';
-    _content = Document.fromJson(jsonDecode(_note!.contentJson));
-    _tags.addAll(_note!.tags ?? []);
+  NoteModel? _noteModel;
+  set noteModel(NoteModel? value) {
+    _noteModel = value;
+    _title = value?.title ?? '';
+    _content = value?.contentJson != null
+        ? Document.fromJson(jsonDecode(value!.contentJson!))
+        : Document();
+    _tags.clear();
+    _tags.addAll(value?.tags ?? []);
     notifyListeners();
   }
 
-  Note? get note => _note;
+  NoteModel? get noteModel => _noteModel;
 
   bool _readOnly = false;
   set readOnly(bool value) {
@@ -44,12 +48,12 @@ class NewNoteController extends ChangeNotifier {
   Document get content => _content;
 
   final List<String> _tags = [];
+  List<String> get tags => [..._tags];
+
   void addTag(String tag) {
     _tags.add(tag);
     notifyListeners();
   }
-
-  List<String> get tags => [..._tags];
 
   void removeTag(int index) {
     _tags.removeAt(index);
@@ -61,21 +65,18 @@ class NewNoteController extends ChangeNotifier {
     notifyListeners();
   }
 
-  bool get isNewNote => _note == null;
+  bool get isNewNote => _noteModel == null;
 
   bool get canSaveNote {
     final String? newTitle = title.isNotEmpty ? title : null;
-    final String? newContent = content.toPlainText().trim().isNotEmpty
-        ? content.toPlainText().trim()
-        : null;
-
-    bool canSave = newTitle != null || newContent != null;
+    final String newContentStr = content.toPlainText().trim();
+    final String? newContentJson = newContentStr.isNotEmpty ? jsonEncode(content.toDelta().toJson()) : null;
+    bool canSave = newTitle != null || newContentJson != null || _tags.isNotEmpty;
 
     if (!isNewNote) {
-      final newContentJson = jsonEncode(content.toDelta().toJson());
-      canSave &= newTitle != note!.title ||
-          newContentJson != note!.contentJson ||
-          !listEquals(tags, note!.tags);
+      canSave &= newTitle != _noteModel!.title ||
+          newContentJson != _noteModel!.contentJson ||
+          !listEquals(_tags, _noteModel!.tags);
     }
 
     return canSave;
@@ -83,22 +84,20 @@ class NewNoteController extends ChangeNotifier {
 
   void saveNote(BuildContext context) {
     final String? newTitle = title.isNotEmpty ? title : null;
-    final String? newContent = content.toPlainText().trim().isNotEmpty
-        ? content.toPlainText().trim()
-        : null;
-    final String contentJson = jsonEncode(_content.toDelta().toJson());
+    final String newContentStr = content.toPlainText().trim();
+    final String? newContentJson = newContentStr.isNotEmpty ? jsonEncode(content.toDelta().toJson()) : null;
     final int now = DateTime.now().microsecondsSinceEpoch;
 
-    final Note note = Note(
+    final NoteModel noteModel = NoteModel(
       title: newTitle,
-      content: newContent,
-      contentJson: contentJson,
-      dateCreated: isNewNote ? now : _note!.dateCreated,
+      description: newContentStr.isNotEmpty ? newContentStr : null,
+      contentJson: newContentJson,
+      dateCreated: isNewNote ? now : _noteModel!.dateCreated,
       dateModified: now,
       tags: tags,
     );
 
     final notesProvider = context.read<NotesProvider>();
-    isNewNote ? notesProvider.addNote(note) : notesProvider.updateNote(note);
+    isNewNote ? notesProvider.addNote(noteModel) : notesProvider.updateNote(noteModel);
   }
 }

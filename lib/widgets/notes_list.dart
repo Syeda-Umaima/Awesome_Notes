@@ -1,6 +1,7 @@
+// lib/widgets/notes_list.dart
 import 'package:flutter/material.dart';
 
-import '../models/note.dart';
+import '../models/note_model.dart';
 import 'note_card.dart';
 
 class NotesList extends StatelessWidget {
@@ -8,7 +9,8 @@ class NotesList extends StatelessWidget {
     required this.notes,
     super.key,
   });
-  final List<Note> notes;
+
+  final List<NoteModel> notes;
 
   @override
   Widget build(BuildContext context) {
