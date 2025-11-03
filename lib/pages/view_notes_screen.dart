@@ -34,6 +34,8 @@ class ViewNotesScreen extends StatelessWidget {
             itemCount: sortedNotes.length,
             itemBuilder: (context, index) {
               final note = sortedNotes[index];
+              final noteIndex = notes.values.toList().indexOf(note);
+              
               return Card(
                 margin: const EdgeInsets.symmetric(vertical: 4),
                 child: ListTile(
@@ -85,7 +87,7 @@ class ViewNotesScreen extends StatelessWidget {
                       );
 
                       if (confirmed == true) {
-                        notes.deleteAt(index);
+                        notes.deleteAt(noteIndex);
                       }
                     },
                   ),

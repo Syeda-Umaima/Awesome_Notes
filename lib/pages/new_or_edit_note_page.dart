@@ -109,23 +109,27 @@ class _NewOrEditNotePageState extends State<NewOrEditNotePage> {
       return;
     }
 
-    final String base64Image = base64Encode(imageBytes);
-    final String imageUrl = 'data:image/png;base64,$base64Image';
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       int index = quillController.selection.baseOffset;
       if (index < 0 || index > quillController.document.length) {
         index = quillController.document.length;
       }
 
-      quillController.replaceText(
-        index,
-        0,
-        quill.BlockEmbed.image(imageUrl),
-        TextSelection.collapsed(offset: index + 1),
+      // Insert a simple placeholder text for image
+      quillController.document.insert(index, '\n[Image attached]\n');
+
+      quillController.updateSelection(
+        TextSelection.collapsed(offset: index + 18),
+        quill.ChangeSource.local,
       );
 
       focusNode.requestFocus();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('✅ Image added to note')),
+        );
+      }
     });
   }
 
@@ -134,40 +138,62 @@ class _NewOrEditNotePageState extends State<NewOrEditNotePage> {
     if (!_isListening) {
       bool available = await _speech.initialize(
         onStatus: (status) => debugPrint('Speech status: $status'),
-        onError: (error) => debugPrint('Speech error: $error'),
+        onError: (error) {
+          debugPrint('Speech error: $error');
+          if (mounted) {
+            setState(() => _isListening = false);
+          }
+        },
       );
 
-      if (available) {
-        setState(() => _isListening = true);
+      if (!available) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('🎙 Listening... Speak now!')),
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Voice Input Unavailable'),
+              content: const Text(
+                'Speech recognition is not available on this device/emulator.\n\n'
+                'To test voice input:\n'
+                '• Use a physical Android/iOS device\n'
+                '• Ensure microphone permissions are granted\n'
+                '• Check device settings for speech recognition',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
           );
         }
-
-        _speech.listen(
-          onResult: (result) {
-            final text = result.recognizedWords.trim();
-            if (text.isNotEmpty) {
-              final index = quillController.selection.baseOffset >= 0
-                  ? quillController.selection.baseOffset
-                  : quillController.document.length;
-
-              quillController.document.insert(index, "$text ");
-              quillController.updateSelection(
-                TextSelection.collapsed(offset: index + text.length + 1),
-                quill.ChangeSource.local,
-              );
-            }
-          },
-        );
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('⚠️ Speech recognition not available')),
-          );
-        }
+        return;
       }
+
+      setState(() => _isListening = true);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('🎙 Listening... Speak now!')),
+        );
+      }
+
+      _speech.listen(
+        onResult: (result) {
+          final text = result.recognizedWords.trim();
+          if (text.isNotEmpty) {
+            final index = quillController.selection.baseOffset >= 0
+                ? quillController.selection.baseOffset
+                : quillController.document.length;
+
+            quillController.document.insert(index, "$text ");
+            quillController.updateSelection(
+              TextSelection.collapsed(offset: index + text.length + 1),
+              quill.ChangeSource.local,
+            );
+          }
+        },
+      );
     } else {
       _speech.stop();
       setState(() => _isListening = false);
@@ -201,14 +227,14 @@ class _NewOrEditNotePageState extends State<NewOrEditNotePage> {
       noteBox.add(hiveNote).then((_) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('✅ Note saved locally & to cloud!')),
+            const SnackBar(content: Text('✅ Note saved successfully!')),
           );
         }
       }).catchError((e) {
         debugPrint('Error saving to Hive: $e');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('⚠️ Saved to cloud but local backup failed: $e')),
+            SnackBar(content: Text('⚠️ Error saving note: $e')),
           );
         }
       });
@@ -304,6 +330,7 @@ class _NewOrEditNotePageState extends State<NewOrEditNotePage> {
                 child: Divider(color: gray500, thickness: 2),
               ),
 
+              // Display image preview separately (above editor)
               if (kIsWeb && webImageBytes != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 8.0),
@@ -336,6 +363,13 @@ class _NewOrEditNotePageState extends State<NewOrEditNotePage> {
                             controller: quillController,
                             scrollController: scrollController,
                             focusNode: focusNode,
+                            config: quill.QuillEditorConfig(
+                              placeholder: 'Write your note here...',
+                              padding: const EdgeInsets.all(8),
+                              embedBuilders: [
+                                _ImageEmbedBuilder(),
+                              ],
+                            ),
                           ),
                         ),
 
@@ -390,8 +424,9 @@ class _NewOrEditNotePageState extends State<NewOrEditNotePage> {
                                       _isListening
                                           ? Icons.mic
                                           : Icons.mic_none_outlined,
-                                      color:
-                                          _isListening ? Colors.red : Colors.grey,
+                                      color: _isListening
+                                          ? Colors.red
+                                          : Colors.grey,
                                     ),
                                     tooltip: _isListening
                                         ? 'Stop Recording'
@@ -421,5 +456,33 @@ class _NewOrEditNotePageState extends State<NewOrEditNotePage> {
         ),
       ),
     );
+  }
+}
+
+// ✅ Custom embed builder for images
+class _ImageEmbedBuilder extends quill.EmbedBuilder {
+  @override
+  String get key => 'image';
+
+  @override
+  Widget build(
+    BuildContext context,
+    quill.EmbedContext embedContext,
+  ) {
+    return const Padding(
+      padding: EdgeInsets.all(8.0),
+      child: Row(
+        children: [
+          Icon(Icons.image, size: 24),
+          SizedBox(width: 8),
+          Text('[Image]'),
+        ],
+      ),
+    );
+  }
+
+  @override
+  String toPlainText(quill.Embed node) {
+    return '[Image]';
   }
 }
