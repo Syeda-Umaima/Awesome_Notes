@@ -46,31 +46,49 @@ class _NewOrEditNotePageState extends State<NewOrEditNotePage> {
   Uint8List? webImageBytes;
 
   @override
-  void initState() {
-    super.initState();
+  @override
+void initState() {
+  super.initState();
 
-    newNoteController = context.read<NewNoteController>();
-    titleController = TextEditingController(text: newNoteController.title);
+  newNoteController = context.read<NewNoteController>();
+  titleController = TextEditingController(text: newNoteController.title);
 
-    quillController = quill.QuillController.basic()
-      ..addListener(() {
-        newNoteController.content = quillController.document;
-      });
-
-    focusNode = FocusNode();
-    scrollController = ScrollController();
-    _speech = stt.SpeechToText();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (widget.isNewNote) {
-        focusNode.requestFocus();
-        newNoteController.readOnly = false;
+  final note = newNoteController.noteModel;
+  if (!widget.isNewNote && note != null && note.imagePath != null) {
+    try {
+      if (kIsWeb || note.imagePath!.length > 200) {
+        // Base64 encoded (web)
+        webImageBytes = base64Decode(note.imagePath!);
+        imagePath = null;
       } else {
-        newNoteController.readOnly = true;
-        quillController.document = newNoteController.content;
+        // Local file path
+        imagePath = note.imagePath;
+        webImageBytes = null;
       }
-    });
+    } catch (e) {
+      debugPrint('Error loading saved image: $e');
+    }
   }
+
+  quillController = quill.QuillController.basic()
+    ..addListener(() {
+      newNoteController.content = quillController.document;
+    });
+
+  focusNode = FocusNode();
+  scrollController = ScrollController();
+  _speech = stt.SpeechToText();
+
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (widget.isNewNote) {
+      focusNode.requestFocus();
+      newNoteController.readOnly = false;
+    } else {
+      newNoteController.readOnly = true;
+      quillController.document = newNoteController.content;
+    }
+  });
+}
 
   @override
   void dispose() {
