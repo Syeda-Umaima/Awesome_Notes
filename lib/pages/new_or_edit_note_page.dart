@@ -18,6 +18,7 @@ import '../models/note_model.dart';
 import '../widgets/note_back_button.dart';
 import '../widgets/note_icon_button_outlined.dart';
 import '../widgets/note_metadata.dart';
+import '../widgets/note_toolbar.dart';
 
 class NewOrEditNotePage extends StatefulWidget {
   const NewOrEditNotePage({required this.isNewNote, super.key});
@@ -82,32 +83,39 @@ class _NewOrEditNotePageState extends State<NewOrEditNotePage> {
 
   // 🖼️ Pick and insert image
   Future<void> pickImage() async {
-    final XFile? picked = await _picker.pickImage(source: ImageSource.gallery);
-    if (picked == null) return;
+    try {
+      final XFile? picked = await _picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
 
-    if (kIsWeb) {
-      webImageBytes = await picked.readAsBytes();
-      setState(() => imagePath = null);
-    } else {
-      setState(() {
-        imagePath = picked.path;
-        webImageBytes = null;
-      });
+      if (picked == null) return;
+
+      if (kIsWeb) {
+        webImageBytes = await picked.readAsBytes();
+        setState(() => imagePath = null);
+      } else {
+        setState(() {
+          imagePath = picked.path;
+          webImageBytes = null;
+        });
+      }
+
+      _addImageToEditor();
+    } catch (e) {
+      debugPrint('Error picking image: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error picking image: $e')),
+        );
+      }
     }
-
-    _addImageToEditor();
   }
 
   Future<void> _addImageToEditor() async {
-    Uint8List imageBytes;
-
-    if (kIsWeb && webImageBytes != null) {
-      imageBytes = webImageBytes!;
-    } else if (!kIsWeb && imagePath != null) {
-      imageBytes = await File(imagePath!).readAsBytes();
-    } else {
-      return;
-    }
+    if (!mounted) return;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       int index = quillController.selection.baseOffset;
@@ -136,28 +144,76 @@ class _NewOrEditNotePageState extends State<NewOrEditNotePage> {
   // 🎤 Voice input
   Future<void> _toggleVoiceInput() async {
     if (!_isListening) {
-      bool available = await _speech.initialize(
-        onStatus: (status) => debugPrint('Speech status: $status'),
-        onError: (error) {
-          debugPrint('Speech error: $error');
-          if (mounted) {
-            setState(() => _isListening = false);
-          }
-        },
-      );
+      try {
+        bool available = await _speech.initialize(
+          onStatus: (status) => debugPrint('Speech status: $status'),
+          onError: (error) {
+            debugPrint('Speech error: $error');
+            if (mounted) {
+              setState(() => _isListening = false);
+            }
+          },
+        );
 
-      if (!available) {
+        if (!available) {
+          if (mounted) {
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('Voice Input Unavailable'),
+                content: const Text(
+                  'Speech recognition is not available on this device/emulator.\n\n'
+                  'To test voice input:\n'
+                  '• Use a physical Android/iOS device\n'
+                  '• Ensure microphone permissions are granted\n'
+                  '• Check device settings for speech recognition',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('OK'),
+                  ),
+                ],
+              ),
+            );
+          }
+          return;
+        }
+
+        setState(() => _isListening = true);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('🎙 Listening... Speak now!')),
+          );
+        }
+
+        _speech.listen(
+          onResult: (result) {
+            final text = result.recognizedWords.trim();
+            if (text.isNotEmpty) {
+              final index = quillController.selection.baseOffset >= 0
+                  ? quillController.selection.baseOffset
+                  : quillController.document.length;
+
+              quillController.document.insert(index, "$text ");
+              quillController.updateSelection(
+                TextSelection.collapsed(offset: index + text.length + 1),
+                quill.ChangeSource.local,
+              );
+            }
+          },
+        );
+      } catch (e) {
+        debugPrint('Speech initialization error: $e');
         if (mounted) {
           showDialog(
             context: context,
             builder: (context) => AlertDialog(
-              title: const Text('Voice Input Unavailable'),
-              content: const Text(
-                'Speech recognition is not available on this device/emulator.\n\n'
-                'To test voice input:\n'
-                '• Use a physical Android/iOS device\n'
-                '• Ensure microphone permissions are granted\n'
-                '• Check device settings for speech recognition',
+              title: const Text('Voice Input Error'),
+              content: Text(
+                'Speech recognition not available on this device.\n\n'
+                'Error: $e\n\n'
+                'Please test on a physical device.',
               ),
               actions: [
                 TextButton(
@@ -168,32 +224,7 @@ class _NewOrEditNotePageState extends State<NewOrEditNotePage> {
             ),
           );
         }
-        return;
       }
-
-      setState(() => _isListening = true);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('🎙 Listening... Speak now!')),
-        );
-      }
-
-      _speech.listen(
-        onResult: (result) {
-          final text = result.recognizedWords.trim();
-          if (text.isNotEmpty) {
-            final index = quillController.selection.baseOffset >= 0
-                ? quillController.selection.baseOffset
-                : quillController.document.length;
-
-            quillController.document.insert(index, "$text ");
-            quillController.updateSelection(
-              TextSelection.collapsed(offset: index + text.length + 1),
-              quill.ChangeSource.local,
-            );
-          }
-        },
-      );
     } else {
       _speech.stop();
       setState(() => _isListening = false);
@@ -205,8 +236,9 @@ class _NewOrEditNotePageState extends State<NewOrEditNotePage> {
     }
   }
 
-  // 💾 Save note
-  void _saveNote() {
+  // 💾 Save note properly to Hive
+  Future<void> _saveNote() async {
+    // Save to cloud (existing functionality)
     newNoteController.saveNote(context);
 
     try {
@@ -214,32 +246,43 @@ class _NewOrEditNotePageState extends State<NewOrEditNotePage> {
       final plainText = quillController.document.toPlainText().trim();
       final voiceText = _isListening ? plainText : null;
 
+      String? storedImagePath;
+
+      if (kIsWeb && webImageBytes != null) {
+        // Store base64 string for web
+        storedImagePath = base64Encode(webImageBytes!);
+      } else if (!kIsWeb && imagePath != null) {
+        // Store local file path for mobile
+        storedImagePath = imagePath;
+      }
+
       final hiveNote = NoteModel(
         title: titleController.text.trim().isEmpty
             ? null
             : titleController.text.trim(),
         description: plainText.isEmpty ? null : plainText,
-        imagePath: imagePath,
+        imagePath: storedImagePath,
         voiceText: voiceText,
         createdAt: DateTime.now(),
       );
 
-      noteBox.add(hiveNote).then((_) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('✅ Note saved successfully!')),
-          );
-        }
-      }).catchError((e) {
-        debugPrint('Error saving to Hive: $e');
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('⚠️ Error saving note: $e')),
-          );
-        }
-      });
+      // ✅ Save to Hive properly with await
+      await noteBox.add(hiveNote);
+
+      debugPrint('📦 Hive has ${noteBox.length} notes after saving');
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('✅ Note saved locally & to cloud!')),
+        );
+      }
     } catch (e) {
-      debugPrint('Error preparing to save to Hive: $e');
+      debugPrint('❌ Error saving to Hive: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('⚠️ Error saving note: $e')),
+        );
+      }
     }
   }
 
@@ -276,7 +319,9 @@ class _NewOrEditNotePageState extends State<NewOrEditNotePage> {
             Selector<NewNoteController, bool>(
               selector: (context, c) => c.readOnly,
               builder: (context, readOnly, child) => NoteIconButtonOutlined(
-                icon: readOnly ? FontAwesomeIcons.pen : FontAwesomeIcons.bookOpen,
+                icon: readOnly
+                    ? FontAwesomeIcons.pen
+                    : FontAwesomeIcons.bookOpen,
                 onPressed: () {
                   newNoteController.readOnly = !readOnly;
                   if (newNoteController.readOnly) {
@@ -292,9 +337,9 @@ class _NewOrEditNotePageState extends State<NewOrEditNotePage> {
               builder: (context, canSaveNote, child) => NoteIconButtonOutlined(
                 icon: FontAwesomeIcons.check,
                 onPressed: canSaveNote
-                    ? () {
-                        _saveNote();
-                        Navigator.pop(context);
+                    ? () async {
+                        await _saveNote();
+                        if (context.mounted) Navigator.pop(context);
                       }
                     : null,
               ),
@@ -305,6 +350,7 @@ class _NewOrEditNotePageState extends State<NewOrEditNotePage> {
           padding: const EdgeInsets.all(8.0),
           child: Column(
             children: [
+              // Title Field
               Selector<NewNoteController, bool>(
                 selector: (context, c) => c.readOnly,
                 builder: (context, readOnly, child) => TextField(
@@ -330,125 +376,95 @@ class _NewOrEditNotePageState extends State<NewOrEditNotePage> {
                 child: Divider(color: gray500, thickness: 2),
               ),
 
-              // Display image preview separately (above editor)
+              // ✅ Image Preview
               if (kIsWeb && webImageBytes != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 8.0),
-                  child: Image.memory(
-                    webImageBytes!,
-                    height: 200,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        maxHeight: 200,
+                        maxWidth: double.infinity,
+                      ),
+                      child: Image.memory(
+                        webImageBytes!,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
                   ),
                 )
               else if (imagePath != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 8.0),
-                  child: Image.file(
-                    File(imagePath!),
-                    height: 200,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        maxHeight: 200,
+                        maxWidth: double.infinity,
+                      ),
+                      child: Image.file(
+                        File(imagePath!),
+                        fit: BoxFit.contain,
+                      ),
+                    ),
                   ),
                 ),
 
+              // Quill Editor
               Expanded(
                 child: Selector<NewNoteController, bool>(
-                  selector: (context, c) => c.readOnly,
-                  builder: (context, readOnly, child) {
-                    return Column(
-                      children: [
-                        Expanded(
-                          child: quill.QuillEditor(
-                            controller: quillController,
-                            scrollController: scrollController,
-                            focusNode: focusNode,
-                            config: quill.QuillEditorConfig(
-                              placeholder: 'Write your note here...',
-                              padding: const EdgeInsets.all(8),
-                              embedBuilders: [
-                                _ImageEmbedBuilder(),
+                  selector: (_, c) => c.readOnly,
+                  builder: (_, readOnly, __) => Column(
+                    children: [
+                      Expanded(
+                        child: quill.QuillEditor(
+                          controller: quillController,
+                          focusNode: focusNode,
+                          scrollController: scrollController,
+                        ),
+                      ),
+
+                      if (!readOnly)
+                        Column(
+                          children: [
+                            NoteToolbar(controller: quillController),
+                            const SizedBox(height: 10),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                // 🎤 Voice Input
+                                IconButton(
+                                  icon: Icon(
+                                    _isListening
+                                        ? Icons.mic
+                                        : Icons.mic_none_outlined,
+                                    color: _isListening
+                                        ? Colors.red
+                                        : Colors.grey,
+                                  ),
+                                  tooltip: _isListening
+                                      ? 'Stop Recording'
+                                      : 'Start Voice Input',
+                                  onPressed: _toggleVoiceInput,
+                                ),
+                                const SizedBox(width: 16),
+                                // 🖼️ Add Image
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.image_outlined,
+                                    color: Colors.grey,
+                                  ),
+                                  tooltip: 'Add Image',
+                                  onPressed: pickImage,
+                                ),
                               ],
                             ),
-                          ),
+                          ],
                         ),
-
-                        if (!readOnly)
-                          Column(
-                            children: [
-                              Container(
-                                color: Colors.grey[200],
-                                child: SingleChildScrollView(
-                                  scrollDirection: Axis.horizontal,
-                                  child: Row(
-                                    children: [
-                                      quill.QuillToolbarToggleStyleButton(
-                                        attribute: quill.Attribute.bold,
-                                        controller: quillController,
-                                      ),
-                                      quill.QuillToolbarToggleStyleButton(
-                                        attribute: quill.Attribute.italic,
-                                        controller: quillController,
-                                      ),
-                                      quill.QuillToolbarToggleStyleButton(
-                                        attribute: quill.Attribute.underline,
-                                        controller: quillController,
-                                      ),
-                                      quill.QuillToolbarToggleStyleButton(
-                                        attribute: quill.Attribute.strikeThrough,
-                                        controller: quillController,
-                                      ),
-                                      const VerticalDivider(),
-                                      quill.QuillToolbarToggleStyleButton(
-                                        attribute: quill.Attribute.ul,
-                                        controller: quillController,
-                                      ),
-                                      quill.QuillToolbarToggleStyleButton(
-                                        attribute: quill.Attribute.ol,
-                                        controller: quillController,
-                                      ),
-                                      const VerticalDivider(),
-                                      quill.QuillToolbarClearFormatButton(
-                                        controller: quillController,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 10),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  IconButton(
-                                    icon: Icon(
-                                      _isListening
-                                          ? Icons.mic
-                                          : Icons.mic_none_outlined,
-                                      color: _isListening
-                                          ? Colors.red
-                                          : Colors.grey,
-                                    ),
-                                    tooltip: _isListening
-                                        ? 'Stop Recording'
-                                        : 'Start Voice Input',
-                                    onPressed: _toggleVoiceInput,
-                                  ),
-                                  const SizedBox(width: 16),
-                                  IconButton(
-                                    icon: const Icon(
-                                      Icons.image_outlined,
-                                      color: Colors.grey,
-                                    ),
-                                    tooltip: 'Add Image',
-                                    onPressed: pickImage,
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                      ],
-                    );
-                  },
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -456,33 +472,5 @@ class _NewOrEditNotePageState extends State<NewOrEditNotePage> {
         ),
       ),
     );
-  }
-}
-
-// ✅ Custom embed builder for images
-class _ImageEmbedBuilder extends quill.EmbedBuilder {
-  @override
-  String get key => 'image';
-
-  @override
-  Widget build(
-    BuildContext context,
-    quill.EmbedContext embedContext,
-  ) {
-    return const Padding(
-      padding: EdgeInsets.all(8.0),
-      child: Row(
-        children: [
-          Icon(Icons.image, size: 24),
-          SizedBox(width: 8),
-          Text('[Image]'),
-        ],
-      ),
-    );
-  }
-
-  @override
-  String toPlainText(quill.Embed node) {
-    return '[Image]';
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
@@ -23,10 +24,16 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // Initialize Hive
-  await Hive.initFlutter();
+  // ✅ Initialize Hive properly in app documents directory
+  final appDocDir = await getApplicationDocumentsDirectory();
+  Hive.init(appDocDir.path);
+
   Hive.registerAdapter(NoteModelAdapter());
-  await Hive.openBox<NoteModel>('notesBox');
+  await Hive.openBox<NoteModel>('notesbox'); // unified lowercase
+
+  // Debug verification
+  print("📁 Hive directory: ${appDocDir.path}");
+  print("📦 Hive box 'notesbox' opened: ${Hive.isBoxOpen('notesbox')}");
 
   runApp(const MyApp());
 }
@@ -49,17 +56,15 @@ class MyApp extends StatelessWidget {
           useMaterial3: true,
           fontFamily: 'Fredoka',
         ),
-        // ✅ Add these localizations to fix FlutterQuill error
         localizationsDelegates: const [
           GlobalMaterialLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
-          quill.FlutterQuillLocalizations.delegate, // ✅ THIS IS THE FIX!
+          quill.FlutterQuillLocalizations.delegate,
         ],
         supportedLocales: const [
           Locale('en', 'US'),
           Locale('en', 'GB'),
-          // Add more locales as needed
         ],
         home: const AuthWrapper(),
       ),
@@ -67,7 +72,6 @@ class MyApp extends StatelessWidget {
   }
 }
 
-// ✅ This Widget listens to the Firebase auth state
 class AuthWrapper extends StatelessWidget {
   const AuthWrapper({super.key});
 
@@ -82,12 +86,10 @@ class AuthWrapper extends StatelessWidget {
           );
         }
 
-        // ✅ If user is logged in → go to MainPage
         if (snapshot.hasData && snapshot.data != null) {
           return const MainPage();
         }
 
-        // ❌ Not logged in → show RegistrationPage
         return const RegistrationPage();
       },
     );
