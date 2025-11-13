@@ -1,14 +1,15 @@
-# AWESOME NOTES
+The Awesome Notes app successfully integrates multiple functionalities such as voice, image, and text-based note-taking, with secure Firebase authentication and local Hive storage for offline access. It demonstrates efficient use of Flutter, Firebase, and Hive, providing a robust and scalable notes management solution suitable for both personal# AWESOME NOTES
 **A Flutter-Based Smart Notes and To-Do Application**
 
 ## 📋 Project Overview
-Awesome Notes is a Flutter-based mobile application designed to help users manage their tasks and notes efficiently. It provides multiple note-taking options such as text, voice, and image-based notes, along with category management and Firebase synchronization. The app also supports offline storage using Hive, ensuring access to notes even without an internet connection.
+Awesome Notes is a Flutter-based mobile application designed to help users manage their tasks and notes efficiently. It provides multiple note-taking options such as text, voice, and image-based notes, along with category management. The app uses Firebase for secure user authentication and Hive for local storage, ensuring access to notes even without an internet connection.
 
 ## 🎯 Objective
 The main objective of this project is to design and develop a smart notes and to-do application that:
 
 - Simplifies daily note-taking and task organization
-- Works both online (Firebase sync) and offline (Hive storage)
+- Provides secure user authentication with Firebase
+- Stores notes locally using Hive for offline access
 - Provides multiple input types including text, voice, and image
 - Offers a user-friendly interface with formatting tools such as bold and italic text
 
@@ -26,8 +27,8 @@ This project aims to assist students and professionals in managing their tasks a
 |------------|---------|
 | Flutter | Cross-platform mobile development |
 | Dart | Programming language for Flutter |
-| Firebase | Cloud data storage and synchronization |
-| Hive | Local offline data storage |
+| Firebase | User authentication and login management |
+| Hive | Local data storage for notes |
 | Provider | State management |
 | Speech-to-Text | For recording voice notes |
 | Image Picker | For capturing and selecting images |
@@ -39,7 +40,7 @@ This project aims to assist students and professionals in managing their tasks a
 - **RAM:** Minimum 4 GB
 - **Software:** Flutter SDK, Android Studio / VS Code
 - **Device:** Android Emulator or Physical Device (Android 8.0 or higher)
-- **Internet:** Required for Firebase Sync
+- **Internet:** Required for Firebase Authentication only
 
 ## 🚀 Setup Instructions
 
@@ -93,7 +94,7 @@ dependencies:
 ## ✨ Major Features
 
 - **Firebase Integration** – Securely stores user signup and login credentials using Firebase Authentication
-- **Offline Mode (Hive)** – Access notes without an internet connection
+- **Local Storage (Hive)** – All notes are stored locally on device for offline access
 - **Task Categories** – Group notes and to-do items by category
 - **Text Formatting** – Supports bold and italic text
 - **Voice Notes** – Record and save spoken notes
