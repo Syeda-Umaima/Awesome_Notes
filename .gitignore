@@ -39,3 +39,8 @@ generated_plugin_registrant.dart
 
 # Personal secrets
 .env
+
+lib/firebase_options.dart
+firebase.json
+.firebaserc
+android/app/google-services.json

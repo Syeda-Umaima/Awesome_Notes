@@ -1,190 +1,285 @@
-The Awesome Notes app successfully integrates multiple functionalities such as voice, image, and text-based note-taking, with secure Firebase authentication and local Hive storage for offline access. It demonstrates efficient use of Flutter, Firebase, and Hive, providing a robust and scalable notes management solution suitable for both personal# AWESOME NOTES
-**A Flutter-Based Smart Notes and To-Do Application**
+# 📝 Awesome Notes
 
-## 📋 Project Overview
-Awesome Notes is a Flutter-based mobile application designed to help users manage their tasks and notes efficiently. It provides multiple note-taking options such as text, voice, and image-based notes, along with category management. The app uses Firebase for secure user authentication and Hive for local storage, ensuring access to notes even without an internet connection.
+<div align="center">
 
-## 🎯 Objective
-The main objective of this project is to design and develop a smart notes and to-do application that:
+![Awesome Notes Banner](assets/screenshots/feature_banner.PNG)
 
-- Simplifies daily note-taking and task organization
-- Provides secure user authentication with Firebase
-- Stores notes locally using Hive for offline access
-- Provides multiple input types including text, voice, and image
-- Offers a user-friendly interface with formatting tools such as bold and italic text
+**A powerful, AI-enhanced notes application with voice input, rich text editing, and smart organization**
 
-## 🔍 Scope of the Project
-This project aims to assist students and professionals in managing their tasks and notes efficiently. The application can be extended for:
+[![Flutter](https://img.shields.io/badge/Flutter-3.19+-02569B?style=for-the-badge&logo=flutter&logoColor=white)](https://flutter.dev)
+[![Firebase](https://img.shields.io/badge/Firebase-Auth-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)](https://firebase.google.com)
+[![Hive](https://img.shields.io/badge/Hive-Local_DB-orange?style=for-the-badge)](https://docs.hivedb.dev)
+[![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
-- Personal task management
-- Academic note organization
-- Office or team collaboration (future enhancement)
-- Reminders and notifications for important events
+[Features](#-features) • [Screenshots](#-screenshots) • [Installation](#-installation) • [Architecture](#-architecture)
 
-## 🛠️ Tools & Technologies Used
+</div>
 
-| Technology | Purpose |
-|------------|---------|
-| Flutter | Cross-platform mobile development |
-| Dart | Programming language for Flutter |
-| Firebase | User authentication and login management |
-| Hive | Local data storage for notes |
-| Provider | State management |
-| Speech-to-Text | For recording voice notes |
-| Image Picker | For capturing and selecting images |
-| Android Studio / VS Code | Development environment |
+---
 
-## 💻 System Requirements
+## 📋 Overview
 
-- **Operating System:** Windows / macOS / Linux
-- **RAM:** Minimum 4 GB
-- **Software:** Flutter SDK, Android Studio / VS Code
-- **Device:** Android Emulator or Physical Device (Android 8.0 or higher)
-- **Internet:** Required for Firebase Authentication only
+**Awesome Notes** is a feature-rich Flutter application that combines traditional note-taking with modern AI capabilities. Create notes using text, voice, or images, organize them with smart tags, and let AI help you summarize and categorize your thoughts.
 
-## 🚀 Setup Instructions
+### 🎯 Perfect for:
+- 📚 Students organizing lecture notes
+- 💼 Professionals managing meeting notes
+- ✅ Anyone tracking tasks and ideas
+- 🎨 Creative writers capturing inspiration
 
-Follow these steps to set up and run the project on your system:
+---
 
-### Step 1 — Clone the Repository
-```bash
-git clone https://github.com/YOUR-USERNAME/Awesome_Notes
+## ✨ Features
+
+### Core Features
+| Feature | Description |
+|---------|-------------|
+| 📝 **Rich Text Editor** | Full formatting with Flutter Quill (bold, italic, lists, etc.) |
+| 🎤 **Voice Input** | Speech-to-text for hands-free note creation |
+| 🖼️ **Image Notes** | Attach images from camera or gallery |
+| 🏷️ **Smart Tags** | Organize notes with custom tags |
+| 🔍 **Powerful Search** | Find notes instantly by title or content |
+| 📱 **Grid/List View** | Choose your preferred layout |
+
+### AI-Powered Features
+| Feature | Description |
+|---------|-------------|
+| 🤖 **AI Summarization** | Auto-generate note summaries |
+| 🏷️ **Smart Tag Suggestions** | AI suggests relevant tags |
+| 💡 **Key Point Extraction** | Identify important points automatically |
+| 📊 **Sentiment Analysis** | Understand the tone of your notes |
+
+### Security & Storage
+| Feature | Description |
+|---------|-------------|
+| 🔐 **Firebase Auth** | Secure email/password & Google Sign-In |
+| 💾 **Offline Storage** | Hive local database for offline access |
+| ☁️ **Cloud Ready** | Architecture supports cloud sync |
+
+### Organization
+| Feature | Description |
+|---------|-------------|
+| 📌 **Pin Notes** | Keep important notes at the top |
+| ⭐ **Favorites** | Mark frequently accessed notes |
+| 🎨 **Color Coding** | Visual organization with 10 colors |
+| ⏰ **Reminders** | Set notification reminders |
+| 🗑️ **Trash & Archive** | Soft delete with recovery option |
+
+---
+
+## 📱 Screenshots
+
+<div align="center">
+
+### Authentication
+| Register | Sign In | Google Auth |
+|:--------:|:-------:|:-----------:|
+| ![Register](assets/screenshots/Register.png) | ![Sign In](assets/screenshots/Sign%20in.png) | ![Google](assets/screenshots/Reg%20with%20Google.png) |
+
+### Main Interface
+| Home | Notes Grid | Search |
+|:----:|:----------:|:------:|
+| ![Main](assets/screenshots/Main.png) | ![Saved](assets/screenshots/Saved%20Notes.png) | ![Sort](assets/screenshots/Sort%20Notes.png) |
+
+### Note Creation
+| New Note | Rich Editor | Image Input |
+|:--------:|:-----------:|:-----------:|
+| ![New1](assets/screenshots/New%20Note%201.png) | ![New2](assets/screenshots/New%20Note%202.png) | ![Image](assets/screenshots/Image%20Input.png) |
+
+</div>
+
+---
+
+## 🏗️ Architecture
+
+```
+lib/
+├── main.dart                    # App entry point
+├── change_notifiers/            # State management (Provider)
+│   ├── new_note_controller.dart # Note editing state
+│   ├── notes_provider.dart      # Notes list state
+│   └── registration_controller.dart
+├── core/                        # Utilities & constants
+│   ├── constants.dart           # App-wide constants
+│   ├── dialogs.dart            # Dialog helpers
+│   ├── extensions.dart         # Dart extensions
+│   ├── utils.dart              # Utility functions
+│   └── validator.dart          # Form validation
+├── enums/
+│   └── order_option.dart       # Sort options
+├── models/
+│   ├── note.dart               # Note entity
+│   ├── note_model.dart         # Hive model
+│   └── note_model.g.dart       # Hive adapter (generated)
+├── pages/
+│   ├── main_page.dart          # Home screen
+│   ├── new_or_edit_note_page.dart
+│   ├── recover_password_page.dart
+│   ├── registration_page.dart
+│   ├── splash_screen.dart      # Animated splash
+│   └── view_notes_screen.dart
+├── services/
+│   ├── ai_service.dart         # AI features
+│   ├── auth_service.dart       # Firebase auth
+│   ├── note_storage_service.dart
+│   └── notification_service.dart
+└── widgets/                    # Reusable components
+    ├── confirmation_dialog.dart
+    ├── note_card.dart
+    ├── note_fab.dart
+    ├── note_grid.dart
+    ├── note_toolbar.dart
+    ├── notes_list.dart
+    ├── search_field.dart
+    └── ... (15+ widgets)
 ```
 
-### Step 2 — Navigate to the Project Folder
-```bash
-cd awesome-notes
-```
+---
 
-### Step 3 — Install Dependencies
+## 🛠️ Tech Stack
+
+| Category | Technology |
+|----------|------------|
+| **Framework** | Flutter 3.19+ |
+| **Language** | Dart 3.0+ |
+| **Auth** | Firebase Authentication |
+| **Database** | Hive (Local), Firestore Ready |
+| **State** | Provider |
+| **Rich Text** | Flutter Quill |
+| **Voice** | speech_to_text |
+| **Images** | image_picker |
+| **Fonts** | Google Fonts (Poppins, Fredoka) |
+
+---
+
+## 📦 Installation
+
+### Prerequisites
+- Flutter SDK 3.19+
+- Firebase project with Authentication enabled
+- Android Studio / VS Code
+
+### Setup Steps
+
 ```bash
+# 1. Clone the repository
+git clone https://github.com/Syeda-Umaima/awesome_notes.git
+cd awesome_notes
+
+# 2. Install dependencies
 flutter pub get
-```
 
-### Step 4 — Configure Firebase
-1. Create a new Firebase project in [Firebase Console](https://console.firebase.google.com/)
-2. Enable Cloud Firestore and Authentication
-3. Download the `google-services.json` file
-4. Place it inside: `android/app/`
+# 3. Generate Hive adapters
+flutter packages pub run build_runner build
 
-### Step 5 — Run the Application
-```bash
+# 4. Configure Firebase (see below)
+
+# 5. Run the app
 flutter run
 ```
 
-## 📦 Dependencies List
+### Firebase Configuration
 
-The project uses the following main dependencies:
+1. Create a project at [Firebase Console](https://console.firebase.google.com)
+2. Enable **Email/Password** and **Google Sign-In** authentication
+3. Download configuration files:
+   - `google-services.json` → `android/app/`
+   - `GoogleService-Info.plist` → `ios/Runner/`
+4. Run `flutterfire configure` (recommended)
+
+⚠️ **Security Note**: Firebase config files are gitignored. Each developer needs their own Firebase project.
+
+---
+
+## 🔐 Security
+
+This app follows security best practices:
+
+| Item | Status |
+|------|--------|
+| Firebase config files | ✅ Gitignored |
+| API keys | ✅ Not in source code |
+| User passwords | ✅ Firebase managed |
+| Local data | ✅ Encrypted with Hive |
+
+---
+
+## 📱 Dependencies
 
 ```yaml
 dependencies:
-  flutter:
-    sdk: flutter
-  firebase_core: ^3.0.0
-  cloud_firestore: ^5.0.0
+  # Core
+  flutter_quill: ^11.5.0      # Rich text editor
+  provider: ^6.1.2            # State management
+  
+  # Firebase
+  firebase_core: ^4.2.0
+  firebase_auth: ^6.1.1
+  cloud_firestore: ^6.0.3
+  google_sign_in: ^5.4.0
+  
+  # Storage
   hive: ^2.2.3
   hive_flutter: ^1.1.0
-  provider: ^6.0.5
-  image_picker: ^1.0.0
-  speech_to_text: ^6.1.0
-  flutter_tts: ^3.6.3
-  path_provider: ^2.1.2
+  
+  # Features
+  speech_to_text: ^7.0.0      # Voice input
+  image_picker: ^1.1.2        # Image capture
+  path_provider: ^2.1.5       # File paths
+  url_launcher: ^6.3.0        # External links
+  intl: ^0.20.2               # Date formatting
 ```
 
-## ✨ Major Features
+---
 
-- **Firebase Integration** – Securely stores user signup and login credentials using Firebase Authentication
-- **Local Storage (Hive)** – All notes are stored locally on device for offline access
-- **Task Categories** – Group notes and to-do items by category
-- **Text Formatting** – Supports bold and italic text
-- **Voice Notes** – Record and save spoken notes
-- **Image Notes** – Add images directly from camera or gallery
-- **Responsive UI** – Works on all device sizes
-- **Clean Architecture** – Easy to maintain and extend
+## 🚀 Roadmap
 
-## 🔄 Working Principle
+- [x] Rich text editing
+- [x] Voice input
+- [x] Image attachments
+- [x] Firebase authentication
+- [x] Local storage with Hive
+- [x] AI summarization
+- [x] Smart tag suggestions
+- [ ] Cloud sync with Firestore
+- [ ] Push notifications for reminders
+- [ ] Note sharing & collaboration
+- [ ] PDF export
+- [ ] Biometric lock
+- [ ] Widget for home screen
 
-1. **User Registration & Access:** Once a user registers with an email and password, they can start creating and managing their personal notes.
+---
 
-2. **Local Storage with Hive:** All notes are securely and efficiently stored locally using the Hive database, ensuring fast performance even without internet connectivity.
+## 🤝 Contributing
 
-3. **Complete Note Management:** Users can view, edit, delete, and organize their notes into different categories for better productivity and structure.
+Contributions are welcome! Please:
 
-4. **Voice & Image Support:** The app supports rich note types — users can create voice and image notes, which are saved as linked files within each note entry.
-
-## 📸 Screenshots
-
-### Authentication Screens
-
-<table>
-  <tr>
-    <td><img src="screenshots/Register.png" alt="Register" width="200"/><br><center>Register</center></td>
-    <td><img src="screenshots/Register2.png" alt="Register Alt" width="200"/><br><center>Register (Alt)</center></td>
-    <td><img src="screenshots/Sign in.png" alt="Sign In" width="200"/><br><center>Sign In</center></td>
-    <td><img src="screenshots/Reg with Google.png" alt="Google Registration" width="200"/><br><center>Google Registration</center></td>
-  </tr>
-  <tr>
-    <td colspan="2"><img src="screenshots/Reg with google 2.png" alt="Google Registration Alt" width="400"/><br><center>Google Registration (Alt)</center></td>
-    <td colspan="2"><img src="screenshots/Firebase console.png" alt="Firebase Console" width="400"/><br><center>Firebase Console</center></td>
-  </tr>
-</table>
-
-### Main Screens
-
-<table>
-  <tr>
-    <td><img src="screenshots/Main.png" alt="Main Screen" width="200"/><br><center>Main Screen</center></td>
-    <td><img src="screenshots/Saved Notes.png" alt="Saved Notes" width="200"/><br><center>Saved Notes</center></td>
-    <td><img src="screenshots/Sort Notes.png" alt="Sort Notes" width="200"/><br><center>Sort Notes</center></td>
-    <td><img src="screenshots/Tag.png" alt="Tag View" width="200"/><br><center>Tag View</center></td>
-  </tr>
-</table>
-
-### Note Management
-
-<table>
-  <tr>
-    <td><img src="screenshots/New Note 1.png" alt="New Note 1" width="200"/><br><center>New Note 1</center></td>
-    <td><img src="screenshots/New Note 2.png" alt="New Note 2" width="200"/><br><center>New Note 2</center></td>
-    <td><img src="screenshots/New Note 3.png" alt="New Note 3" width="200"/><br><center>New Note 3</center></td>
-    <td><img src="screenshots/Update Note.png" alt="Update Note" width="200"/><br><center>Update Note</center></td>
-  </tr>
-</table>
-
-### Image Input
-
-<p align="center">
-  <img src="screenshots/Image Input.png" alt="Image Input" width="300"/>
-  <br>
-  <em>Image Input</em>
-</p>
-
-## 🚀 Future Enhancements
-
-- Add reminders and push notifications
-- Implement note locking (PIN or biometrics)
-- Add calendar integration
-- Support for PDF or text export
-
-## 🎓 Conclusion
-
-The Awesome Notes app successfully integrates multiple functionalities such as voice, image, and text-based note-taking, combined with cloud synchronization and offline access. It demonstrates efficient use of Flutter, Firebase, and Hive, providing a robust and scalable notes management solution suitable for both personal and professional use.
+1. Fork the project
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
 ---
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 👤 Author
+---
 
-**Your Name**
-- GitHub: [@Syeda-Umaima](https://github.com/Syeda-Umaima)
+## 👨‍💻 Author
 
-## 🤝 Contributing
+**Syeda Umaima**
 
-Contributions, issues, and feature requests are welcome! Feel free to check the [issues page](https://github.com/YOUR-USERNAME/Syeda-Umaima/issues).
+[![GitHub](https://img.shields.io/badge/GitHub-@Syeda--Umaima-181717?style=flat&logo=github)](https://github.com/Syeda-Umaima)
 
-## ⭐ Show your support
+---
 
-Give a ⭐️ if this project helped you!
+<div align="center">
+
+⭐ **Star this repo if you found it helpful!**
+
+Made with ❤️ and Flutter
+
+</div>
