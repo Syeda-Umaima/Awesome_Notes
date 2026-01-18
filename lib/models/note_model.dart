@@ -29,6 +29,9 @@ class NoteModel extends HiveObject {
   @HiveField(7)
   List<String>? tags;
 
+  @HiveField(8)
+  String? userId;
+
   NoteModel({
     this.title,
     this.description,
@@ -38,5 +41,6 @@ class NoteModel extends HiveObject {
     this.dateModified,
     this.contentJson,
     this.tags,
+    this.userId,
   });
 }

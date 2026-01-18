@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../change_notifiers/new_note_controller.dart';
 import '../change_notifiers/notes_provider.dart';
@@ -31,7 +32,12 @@ class _MainPageState extends State<MainPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = context.read<NotesProvider>();
       final box = Hive.box<NoteModel>('notesbox');
-      final hiveNotes = box.values.toList()
+      final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+
+      // Filter notes to only show current user's notes
+      final hiveNotes = box.values
+          .where((note) => note.userId == currentUserId)
+          .toList()
         ..sort((a, b) => (b.dateCreated ?? 0)
             .compareTo(a.dateCreated ?? 0));
       provider.setNotes(hiveNotes);

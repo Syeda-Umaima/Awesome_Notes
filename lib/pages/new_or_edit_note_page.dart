@@ -10,13 +10,17 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:hive/hive.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../change_notifiers/new_note_controller.dart';
 import '../change_notifiers/notes_provider.dart';
 import '../core/constants.dart';
 import '../core/dialogs.dart';
 import '../models/note_model.dart';
+import '../services/notification_service.dart';
+import '../widgets/ai_features_sheet.dart';
 import '../widgets/note_back_button.dart';
+import '../widgets/note_color_picker.dart';
 import '../widgets/note_icon_button_outlined.dart';
 import '../widgets/note_metadata.dart';
 import '../widgets/note_toolbar.dart';
@@ -44,6 +48,10 @@ class _NewOrEditNotePageState extends State<NewOrEditNotePage> {
   // Image handling
   String? imagePath;
   Uint8List? webImageBytes;
+
+  // New feature state
+  int _selectedColorIndex = 0;
+  DateTime? _reminderDateTime;
 
   @override
   @override
@@ -255,6 +263,132 @@ void initState() {
     }
   }
 
+  // 🤖 Show AI Features Bottom Sheet
+  void _showAIFeatures() {
+    final content = quillController.document.toPlainText().trim();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => AIFeaturesSheet(
+        title: titleController.text,
+        content: content,
+        onSummaryGenerated: (summary) {
+          // Insert summary at cursor position
+          final index = quillController.selection.baseOffset >= 0
+              ? quillController.selection.baseOffset
+              : quillController.document.length;
+          quillController.document.insert(index, '\n\n📝 Summary:\n$summary\n');
+          ScaffoldMessenger.of(this.context).showSnackBar(
+            const SnackBar(content: Text('✅ Summary added to note')),
+          );
+        },
+        onTagsSuggested: (tags) {
+          // Clear existing tags and add new ones
+          while (newNoteController.tags.isNotEmpty) {
+            newNoteController.removeTag(0);
+          }
+          for (final tag in tags) {
+            newNoteController.addTag(tag);
+          }
+          ScaffoldMessenger.of(this.context).showSnackBar(
+            SnackBar(content: Text('✅ Tags applied: ${tags.join(", ")}')),
+          );
+        },
+        onTitleSuggested: (title) {
+          titleController.text = title;
+          newNoteController.title = title;
+          ScaffoldMessenger.of(this.context).showSnackBar(
+            const SnackBar(content: Text('✅ Title updated')),
+          );
+        },
+      ),
+    );
+  }
+
+  // 🎨 Show Color Picker
+  void _showColorPicker() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => NoteColorPicker(
+        selectedColorIndex: _selectedColorIndex,
+        onColorSelected: (index) {
+          setState(() {
+            _selectedColorIndex = index;
+          });
+          ScaffoldMessenger.of(this.context).showSnackBar(
+            const SnackBar(content: Text('✅ Note color changed')),
+          );
+        },
+      ),
+    );
+  }
+
+  // ⏰ Show Reminder Picker
+  void _showReminderPicker() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: ReminderPickerDialog(
+          initialDateTime: _reminderDateTime,
+        ),
+      ),
+    ).then((selectedDateTime) {
+      if (!mounted) return;
+      if (selectedDateTime != null && selectedDateTime is DateTime) {
+        setState(() {
+          _reminderDateTime = selectedDateTime;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '⏰ Reminder set for ${selectedDateTime.day}/${selectedDateTime.month}/${selectedDateTime.year} at ${selectedDateTime.hour}:${selectedDateTime.minute.toString().padLeft(2, '0')}',
+            ),
+          ),
+        );
+      }
+    });
+  }
+
+  // Build feature button widget
+  Widget _buildFeatureButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: color, size: 22),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 10,
+                color: color,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   // 💾 Save note properly to Hive
   Future<void> _saveNote() async {
   try {
@@ -271,6 +405,7 @@ void initState() {
 
     NoteModel hiveNote;
     if (widget.isNewNote) {
+      final currentUserId = FirebaseAuth.instance.currentUser?.uid;
       hiveNote = NoteModel(
         title: titleController.text.trim().isEmpty ? null : titleController.text.trim(),
         description: plainText.isEmpty ? null : plainText,
@@ -280,6 +415,7 @@ void initState() {
         imagePath: storedImagePath,
         voiceText: voiceText,
         tags: newNoteController.tags,
+        userId: currentUserId,
       );
       await noteBox.add(hiveNote);
     } else {
@@ -296,7 +432,11 @@ void initState() {
     }
 
     if (mounted) {
-      context.read<NotesProvider>().setNotes(noteBox.values.toList());
+      final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+      final userNotes = noteBox.values
+          .where((note) => note.userId == currentUserId)
+          .toList();
+      context.read<NotesProvider>().setNotes(userNotes);
     }
 
     if (mounted) {
@@ -459,35 +599,59 @@ void initState() {
                           children: [
                             NoteToolbar(controller: quillController),
                             const SizedBox(height: 10),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                // 🎤 Voice Input
-                                IconButton(
-                                  icon: Icon(
-                                    _isListening
-                                        ? Icons.mic
-                                        : Icons.mic_none_outlined,
-                                    color: _isListening
-                                        ? Colors.red
-                                        : Colors.grey,
+                            // Enhanced Feature Toolbar
+                            Container(
+                              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade100,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  // 🎤 Voice Input
+                                  _buildFeatureButton(
+                                    icon: _isListening ? Icons.mic : Icons.mic_none_outlined,
+                                    label: 'Voice',
+                                    color: _isListening ? Colors.red : Colors.grey.shade700,
+                                    onTap: _toggleVoiceInput,
                                   ),
-                                  tooltip: _isListening
-                                      ? 'Stop Recording'
-                                      : 'Start Voice Input',
-                                  onPressed: _toggleVoiceInput,
-                                ),
-                                const SizedBox(width: 16),
-                                // 🖼️ Add Image
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.image_outlined,
-                                    color: Colors.grey,
+                                  // 🖼️ Add Image
+                                  _buildFeatureButton(
+                                    icon: Icons.image_outlined,
+                                    label: 'Image',
+                                    color: Colors.grey.shade700,
+                                    onTap: pickImage,
                                   ),
-                                  tooltip: 'Add Image',
-                                  onPressed: pickImage,
-                                ),
-                              ],
+                                  // 🤖 AI Features
+                                  _buildFeatureButton(
+                                    icon: Icons.auto_awesome,
+                                    label: 'AI',
+                                    color: const Color(0xFFC39E18),
+                                    onTap: _showAIFeatures,
+                                  ),
+                                  // 🎨 Color Picker
+                                  _buildFeatureButton(
+                                    icon: Icons.palette_outlined,
+                                    label: 'Color',
+                                    color: NoteColorPicker.getColor(_selectedColorIndex) == Colors.white
+                                        ? Colors.grey.shade700
+                                        : NoteColorPicker.getColor(_selectedColorIndex),
+                                    onTap: _showColorPicker,
+                                  ),
+                                  // ⏰ Reminder
+                                  _buildFeatureButton(
+                                    icon: _reminderDateTime != null
+                                        ? Icons.alarm_on
+                                        : Icons.alarm_add_outlined,
+                                    label: 'Remind',
+                                    color: _reminderDateTime != null
+                                        ? Colors.green
+                                        : Colors.grey.shade700,
+                                    onTap: _showReminderPicker,
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                         ),

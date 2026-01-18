@@ -14,6 +14,7 @@ import 'firebase_options.dart';
 import 'models/note_model.dart';
 import 'pages/main_page.dart';
 import 'pages/registration_page.dart';
+import 'pages/splash_screen.dart';
 import 'services/auth_service.dart';
 
 Future<void> main() async {
@@ -72,11 +73,28 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class AuthWrapper extends StatelessWidget {
+class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
 
   @override
+  State<AuthWrapper> createState() => _AuthWrapperState();
+}
+
+class _AuthWrapperState extends State<AuthWrapper> {
+  bool _showSplash = true;
+
+  void _onSplashComplete() {
+    setState(() {
+      _showSplash = false;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (_showSplash) {
+      return SplashScreen(onComplete: _onSplashComplete);
+    }
+
     return StreamBuilder<User?>(
       stream: AuthService.userStream,
       builder: (context, snapshot) {
