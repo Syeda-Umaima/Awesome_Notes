@@ -8,7 +8,6 @@ import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
-import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:hive/hive.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -24,6 +23,7 @@ import '../widgets/note_color_picker.dart';
 import '../widgets/note_icon_button_outlined.dart';
 import '../widgets/note_metadata.dart';
 import '../widgets/note_toolbar.dart';
+import '../widgets/voice_input_dialog.dart';
 
 class NewOrEditNotePage extends StatefulWidget {
   const NewOrEditNotePage({required this.isNewNote, super.key});
@@ -42,8 +42,6 @@ class _NewOrEditNotePageState extends State<NewOrEditNotePage> {
   late final ScrollController scrollController;
 
   final ImagePicker _picker = ImagePicker();
-  late stt.SpeechToText _speech;
-  bool _isListening = false;
 
   // Image handling
   String? imagePath;
@@ -85,7 +83,6 @@ void initState() {
 
   focusNode = FocusNode();
   scrollController = ScrollController();
-  _speech = stt.SpeechToText();
 
   WidgetsBinding.instance.addPostFrameCallback((_) {
     if (widget.isNewNote) {
@@ -104,7 +101,6 @@ void initState() {
     quillController.dispose();
     focusNode.dispose();
     scrollController.dispose();
-    _speech.stop();
     super.dispose();
   }
 
@@ -168,99 +164,32 @@ void initState() {
     });
   }
 
-  // 🎤 Voice input
-  Future<void> _toggleVoiceInput() async {
-    if (!_isListening) {
-      try {
-        bool available = await _speech.initialize(
-          onStatus: (status) => debugPrint('Speech status: $status'),
-          onError: (error) {
-            debugPrint('Speech error: $error');
-            if (mounted) {
-              setState(() => _isListening = false);
-            }
-          },
-        );
+  // 🎤 Voice input - Show voice input dialog
+  void _showVoiceInput() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => VoiceInputDialog(
+        onTextRecognized: (text) {
+          // Insert recognized text at cursor position
+          final index = quillController.selection.baseOffset >= 0
+              ? quillController.selection.baseOffset
+              : quillController.document.length - 1;
 
-        if (!available) {
-          if (mounted) {
-            showDialog(
-              context: context,
-              builder: (context) => AlertDialog(
-                title: const Text('Voice Input Unavailable'),
-                content: const Text(
-                  'Speech recognition is not available on this device/emulator.\n\n'
-                  'To test voice input:\n'
-                  '• Use a physical Android/iOS device\n'
-                  '• Ensure microphone permissions are granted\n'
-                  '• Check device settings for speech recognition',
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('OK'),
-                  ),
-                ],
-              ),
-            );
-          }
-          return;
-        }
-
-        setState(() => _isListening = true);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('🎙 Listening... Speak now!')),
+          final safeIndex = index.clamp(0, quillController.document.length - 1);
+          quillController.document.insert(safeIndex, '$text ');
+          quillController.updateSelection(
+            TextSelection.collapsed(offset: safeIndex + text.length + 1),
+            quill.ChangeSource.local,
           );
-        }
 
-        _speech.listen(
-          onResult: (result) {
-            final text = result.recognizedWords.trim();
-            if (text.isNotEmpty) {
-              final index = quillController.selection.baseOffset >= 0
-                  ? quillController.selection.baseOffset
-                  : quillController.document.length;
-
-              quillController.document.insert(index, "$text ");
-              quillController.updateSelection(
-                TextSelection.collapsed(offset: index + text.length + 1),
-                quill.ChangeSource.local,
-              );
-            }
-          },
-        );
-      } catch (e) {
-        debugPrint('Speech initialization error: $e');
-        if (mounted) {
-          showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('Voice Input Error'),
-              content: Text(
-                'Speech recognition not available on this device.\n\n'
-                'Error: $e\n\n'
-                'Please test on a physical device.',
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('OK'),
-                ),
-              ],
-            ),
+          ScaffoldMessenger.of(this.context).showSnackBar(
+            const SnackBar(content: Text('✅ Voice text inserted')),
           );
-        }
-      }
-    } else {
-      _speech.stop();
-      setState(() => _isListening = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('🛑 Stopped listening')),
-        );
-      }
-    }
+        },
+      ),
+    );
   }
 
   // 🤖 Show AI Features Bottom Sheet
@@ -394,7 +323,6 @@ void initState() {
   try {
     final noteBox = Hive.box<NoteModel>('notesbox');
     final plainText = quillController.document.toPlainText().trim();
-    final voiceText = _isListening ? plainText : null;
 
     String? storedImagePath;
     if (kIsWeb && webImageBytes != null) {
@@ -413,7 +341,6 @@ void initState() {
         dateCreated: DateTime.now().microsecondsSinceEpoch,
         dateModified: DateTime.now().microsecondsSinceEpoch,
         imagePath: storedImagePath,
-        voiceText: voiceText,
         tags: newNoteController.tags,
         userId: currentUserId,
       );
@@ -426,7 +353,6 @@ void initState() {
         ..contentJson = jsonEncode(quillController.document.toDelta().toJson())
         ..dateModified = DateTime.now().microsecondsSinceEpoch
         ..imagePath = storedImagePath
-        ..voiceText = voiceText
         ..tags = newNoteController.tags;
       await hiveNote.save();
     }
@@ -611,10 +537,10 @@ void initState() {
                                 children: [
                                   // 🎤 Voice Input
                                   _buildFeatureButton(
-                                    icon: _isListening ? Icons.mic : Icons.mic_none_outlined,
+                                    icon: Icons.mic_none_outlined,
                                     label: 'Voice',
-                                    color: _isListening ? Colors.red : Colors.grey.shade700,
-                                    onTap: _toggleVoiceInput,
+                                    color: Colors.grey.shade700,
+                                    onTap: _showVoiceInput,
                                   ),
                                   // 🖼️ Add Image
                                   _buildFeatureButton(
