@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Awesome Notes Banner](assets/screenshots/feature_banner.PNG)
+![Awesome Notes Banner](assets/screenshots/feature_banner.png)
 
 **A powerful, AI-enhanced notes application with voice input, rich text editing, and smart organization**
 
