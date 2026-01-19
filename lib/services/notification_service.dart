@@ -1,76 +1,21 @@
-// lib/services/notification_service.dart
-//
-// Local Notification Service for Note Reminders
-// 
-// Dependencies to add in pubspec.yaml:
-// flutter_local_notifications: ^16.3.0
-// timezone: ^0.9.2
-// 
-// Also add to AndroidManifest.xml:
-// <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
-// <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
-// <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
-
 import 'package:flutter/material.dart';
-// import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-// import 'package:timezone/timezone.dart' as tz;
-// import 'package:timezone/data/latest.dart' as tz;
 
+/// Handles local notifications for note reminders.
+/// Requires flutter_local_notifications and timezone packages when fully implemented.
 class NotificationService {
   NotificationService._();
-
-  // static final FlutterLocalNotificationsPlugin _notifications = 
-  //     FlutterLocalNotificationsPlugin();
 
   static bool _isInitialized = false;
 
   /// Initialize the notification service
   static Future<void> initialize() async {
     if (_isInitialized) return;
-
-    // tz.initializeTimeZones();
-
-    // const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
-    // const iosSettings = DarwinInitializationSettings(
-    //   requestAlertPermission: true,
-    //   requestBadgePermission: true,
-    //   requestSoundPermission: true,
-    // );
-
-    // const initSettings = InitializationSettings(
-    //   android: androidSettings,
-    //   iOS: iosSettings,
-    // );
-
-    // await _notifications.initialize(
-    //   initSettings,
-    //   onDidReceiveNotificationResponse: _onNotificationTapped,
-    // );
-
     _isInitialized = true;
-    debugPrint('✅ Notification service initialized');
+    debugPrint('Notification service initialized');
   }
 
   /// Request notification permissions (iOS & Android 13+)
   static Future<bool> requestPermissions() async {
-    // For Android 13+
-    // final androidPlugin = _notifications
-    //     .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
-    // if (androidPlugin != null) {
-    //   return await androidPlugin.requestNotificationsPermission() ?? false;
-    // }
-
-    // For iOS
-    // final iosPlugin = _notifications
-    //     .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>();
-    // if (iosPlugin != null) {
-    //   return await iosPlugin.requestPermissions(
-    //     alert: true,
-    //     badge: true,
-    //     sound: true,
-    //   ) ?? false;
-    // }
-
     return true;
   }
 
@@ -81,97 +26,33 @@ class NotificationService {
     required String notePreview,
     required DateTime scheduledTime,
   }) async {
-    // Cancel any existing notification for this note
     await cancelReminder(noteId);
-
-    // final scheduledDate = tz.TZDateTime.from(scheduledTime, tz.local);
-
-    // const androidDetails = AndroidNotificationDetails(
-    //   'note_reminders',
-    //   'Note Reminders',
-    //   channelDescription: 'Reminders for your notes',
-    //   importance: Importance.high,
-    //   priority: Priority.high,
-    //   icon: '@mipmap/ic_launcher',
-    //   color: Color(0xFFC39E18),
-    //   styleInformation: BigTextStyleInformation(''),
-    // );
-
-    // const iosDetails = DarwinNotificationDetails(
-    //   presentAlert: true,
-    //   presentBadge: true,
-    //   presentSound: true,
-    // );
-
-    // const notificationDetails = NotificationDetails(
-    //   android: androidDetails,
-    //   iOS: iosDetails,
-    // );
-
-    // await _notifications.zonedSchedule(
-    //   noteId,
-    //   '📝 ${noteTitle.isEmpty ? "Note Reminder" : noteTitle}',
-    //   notePreview.isEmpty ? 'Time to check your note!' : notePreview,
-    //   scheduledDate,
-    //   notificationDetails,
-    //   androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-    //   uiLocalNotificationDateInterpretation:
-    //       UILocalNotificationDateInterpretation.absoluteTime,
-    // );
-
-    debugPrint('⏰ Reminder scheduled for note $noteId at $scheduledTime');
+    debugPrint('Reminder scheduled for note $noteId at $scheduledTime');
   }
 
   /// Cancel a scheduled reminder
   static Future<void> cancelReminder(int noteId) async {
-    // await _notifications.cancel(noteId);
-    debugPrint('🚫 Reminder cancelled for note $noteId');
+    debugPrint('Reminder cancelled for note $noteId');
   }
 
   /// Cancel all reminders
   static Future<void> cancelAllReminders() async {
-    // await _notifications.cancelAll();
-    debugPrint('🚫 All reminders cancelled');
+    debugPrint('All reminders cancelled');
   }
 
   /// Get pending notifications
   static Future<List<PendingNotification>> getPendingReminders() async {
-    // final pending = await _notifications.pendingNotificationRequests();
-    // return pending.map((n) => PendingNotification(
-    //   id: n.id,
-    //   title: n.title ?? '',
-    //   body: n.body ?? '',
-    // )).toList();
     return [];
   }
 
   /// Handle notification tap
   static void _onNotificationTapped(dynamic response) {
-    // Navigate to the note when notification is tapped
-    // You can use a navigation service or callback here
-    debugPrint('📱 Notification tapped: ${response.payload}');
+    debugPrint('Notification tapped: ${response.payload}');
   }
 
   /// Show an immediate notification (for testing)
   static Future<void> showTestNotification() async {
-    // const androidDetails = AndroidNotificationDetails(
-    //   'test_channel',
-    //   'Test Notifications',
-    //   channelDescription: 'For testing notifications',
-    //   importance: Importance.high,
-    //   priority: Priority.high,
-    // );
-
-    // const notificationDetails = NotificationDetails(android: androidDetails);
-
-    // await _notifications.show(
-    //   0,
-    //   '🎉 Test Notification',
-    //   'Notifications are working correctly!',
-    //   notificationDetails,
-    // );
-
-    debugPrint('🔔 Test notification sent');
+    debugPrint('Test notification sent');
   }
 }
 
@@ -188,7 +69,7 @@ class PendingNotification {
   });
 }
 
-/// Reminder dialog widget
+/// Dialog for picking reminder date and time
 class ReminderPickerDialog extends StatefulWidget {
   final DateTime? initialDateTime;
 
@@ -226,7 +107,6 @@ class _ReminderPickerDialogState extends State<ReminderPickerDialog> {
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Date picker
           ListTile(
             leading: const Icon(Icons.calendar_today),
             title: const Text('Date'),
@@ -245,7 +125,6 @@ class _ReminderPickerDialogState extends State<ReminderPickerDialog> {
               }
             },
           ),
-          // Time picker
           ListTile(
             leading: const Icon(Icons.access_time),
             title: const Text('Time'),
@@ -261,7 +140,6 @@ class _ReminderPickerDialogState extends State<ReminderPickerDialog> {
             },
           ),
           const SizedBox(height: 10),
-          // Quick options
           Wrap(
             spacing: 8,
             children: [

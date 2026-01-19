@@ -1,8 +1,8 @@
-// lib/models/note_model.dart
 import 'package:hive/hive.dart';
 
 part 'note_model.g.dart';
 
+/// Hive model for storing notes locally with user isolation
 @HiveType(typeId: 0)
 class NoteModel extends HiveObject {
   @HiveField(0)

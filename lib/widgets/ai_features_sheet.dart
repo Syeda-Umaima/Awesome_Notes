@@ -1,7 +1,7 @@
-// lib/widgets/ai_features_sheet.dart
 import 'package:flutter/material.dart';
 import '../services/ai_service.dart';
 
+/// Bottom sheet with AI-powered features for note analysis
 class AIFeaturesSheet extends StatefulWidget {
   final String title;
   final String content;
@@ -160,13 +160,12 @@ class _AIFeaturesSheetState extends State<AIFeaturesSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
           Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFC39E18).withOpacity(0.1),
+                  color: const Color(0xFFC39E18).withAlpha(26),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
@@ -191,8 +190,6 @@ class _AIFeaturesSheetState extends State<AIFeaturesSheet> {
             ],
           ),
           const SizedBox(height: 20),
-
-          // AI Feature Buttons
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
@@ -235,8 +232,6 @@ class _AIFeaturesSheetState extends State<AIFeaturesSheet> {
             ),
           ),
           const SizedBox(height: 20),
-
-          // Results Area
           if (_isLoading)
             const Center(
               child: Padding(
@@ -276,7 +271,7 @@ class _AIFeaturesSheetState extends State<AIFeaturesSheet> {
         decoration: BoxDecoration(
           color: isActive
               ? const Color(0xFFC39E18)
-              : const Color(0xFFC39E18).withOpacity(0.1),
+              : const Color(0xFFC39E18).withAlpha(26),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: const Color(0xFFC39E18),
@@ -338,7 +333,6 @@ class _AIFeaturesSheetState extends State<AIFeaturesSheet> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Summary Result
           if (_activeFeature == 'summary' && _summary != null) ...[
             _buildResultHeader('Summary', Icons.summarize),
             const SizedBox(height: 10),
@@ -349,8 +343,6 @@ class _AIFeaturesSheetState extends State<AIFeaturesSheet> {
               Navigator.pop(context);
             }),
           ],
-
-          // Tags Result
           if (_activeFeature == 'tags' && _suggestedTags != null) ...[
             _buildResultHeader('Suggested Tags', Icons.tag),
             const SizedBox(height: 10),
@@ -360,7 +352,7 @@ class _AIFeaturesSheetState extends State<AIFeaturesSheet> {
               children: _suggestedTags!.map((tag) {
                 return Chip(
                   label: Text('#$tag'),
-                  backgroundColor: const Color(0xFFC39E18).withOpacity(0.1),
+                  backgroundColor: const Color(0xFFC39E18).withAlpha(26),
                   labelStyle: const TextStyle(color: Color(0xFFC39E18)),
                 );
               }).toList(),
@@ -371,8 +363,6 @@ class _AIFeaturesSheetState extends State<AIFeaturesSheet> {
               Navigator.pop(context);
             }),
           ],
-
-          // Sentiment Result
           if (_activeFeature == 'sentiment' && _sentiment != null) ...[
             _buildResultHeader('Sentiment Analysis', Icons.mood),
             const SizedBox(height: 10),
@@ -406,8 +396,6 @@ class _AIFeaturesSheetState extends State<AIFeaturesSheet> {
               ],
             ),
           ],
-
-          // Key Points Result
           if (_activeFeature == 'keypoints' && _keyPoints != null) ...[
             _buildResultHeader('Key Points', Icons.format_list_bulleted),
             const SizedBox(height: 10),
@@ -430,8 +418,6 @@ class _AIFeaturesSheetState extends State<AIFeaturesSheet> {
                     ),
                   ))),
           ],
-
-          // Title Result
           if (_activeFeature == 'title' && _suggestedTitle != null) ...[
             _buildResultHeader('Suggested Title', Icons.title),
             const SizedBox(height: 10),

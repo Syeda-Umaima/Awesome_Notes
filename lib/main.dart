@@ -20,21 +20,15 @@ import 'services/auth_service.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // ✅ Initialize Hive properly in app documents directory
+  // Initialize Hive in app documents directory for persistent storage
   final appDocDir = await getApplicationDocumentsDirectory();
   Hive.init(appDocDir.path);
-
   Hive.registerAdapter(NoteModelAdapter());
-  await Hive.openBox<NoteModel>('notesbox'); // unified lowercase
-
-  // Debug verification
-  print("📁 Hive directory: ${appDocDir.path}");
-  print("📦 Hive box 'notesbox' opened: ${Hive.isBoxOpen('notesbox')}");
+  await Hive.openBox<NoteModel>('notesbox');
 
   runApp(const MyApp());
 }
@@ -73,6 +67,7 @@ class MyApp extends StatelessWidget {
   }
 }
 
+/// Handles authentication state and shows appropriate screen
 class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
 

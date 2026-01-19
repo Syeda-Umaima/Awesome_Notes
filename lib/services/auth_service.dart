@@ -1,4 +1,3 @@
-// lib/services/auth_service.dart
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
@@ -6,6 +5,7 @@ class NoGoogleAccountChosenException implements Exception {
   const NoGoogleAccountChosenException();
 }
 
+/// Handles all Firebase authentication operations
 class AuthService {
   AuthService._();
 
@@ -16,6 +16,7 @@ class AuthService {
   static Stream<User?> get userStream => _auth.userChanges();
   static bool get isEmailVerified => user?.emailVerified ?? false;
 
+  /// Register new user with email and password
   static Future<void> register({
     required String fullName,
     required String email,
@@ -33,6 +34,7 @@ class AuthService {
     }
   }
 
+  /// Login with email and password
   static Future<void> login({
     required String email,
     required String password,
@@ -44,31 +46,33 @@ class AuthService {
     }
   }
 
- static Future<UserCredential> signInWithGoogle() async {
-  try {
-    // For older google_sign_in versions
-    final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-    
-    if (googleUser == null) {
-      throw const NoGoogleAccountChosenException();
+  /// Sign in with Google account
+  static Future<UserCredential> signInWithGoogle() async {
+    try {
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+
+      if (googleUser == null) {
+        throw const NoGoogleAccountChosenException();
+      }
+
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+
+      final OAuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      return await _auth.signInWithCredential(credential);
+    } catch (e) {
+      rethrow;
     }
-
-    final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-
-    final OAuthCredential credential = GoogleAuthProvider.credential(
-      accessToken: googleAuth.accessToken,
-      idToken: googleAuth.idToken,
-    );
-
-    return await _auth.signInWithCredential(credential);
-  } catch (e) {
-    rethrow;
   }
-}
 
+  /// Send password reset email
   static Future<void> resetPassword({required String email}) =>
       _auth.sendPasswordResetEmail(email: email);
 
+  /// Sign out from both Firebase and Google
   static Future<void> logout() async {
     await _auth.signOut();
     await _googleSignIn.signOut();

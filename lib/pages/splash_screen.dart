@@ -1,7 +1,7 @@
-// lib/pages/splash_screen.dart
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 
+/// Animated splash screen with floating notes and feature badges
 class SplashScreen extends StatefulWidget {
   final VoidCallback onComplete;
 
@@ -36,7 +36,6 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   void _initAnimations() {
-    // Logo animation
     _logoController = AnimationController(
       duration: const Duration(milliseconds: 1500),
       vsync: this,
@@ -56,7 +55,6 @@ class _SplashScreenState extends State<SplashScreen>
       ),
     );
 
-    // Text animation
     _textController = AnimationController(
       duration: const Duration(milliseconds: 1000),
       vsync: this,
@@ -73,7 +71,6 @@ class _SplashScreenState extends State<SplashScreen>
       CurvedAnimation(parent: _textController, curve: Curves.easeOut),
     );
 
-    // Floating notes animation
     _noteController = AnimationController(
       duration: const Duration(seconds: 3),
       vsync: this,
@@ -83,7 +80,6 @@ class _SplashScreenState extends State<SplashScreen>
       CurvedAnimation(parent: _noteController, curve: Curves.easeInOut),
     );
 
-    // Pulse animation
     _pulseController = AnimationController(
       duration: const Duration(milliseconds: 1500),
       vsync: this,
@@ -120,23 +116,19 @@ class _SplashScreenState extends State<SplashScreen>
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Color(0xFFC39E18), // Primary gold
-              Color(0xFFE8C547), // Light gold
-              Color(0xFFA88615), // Dark gold
+              Color(0xFFC39E18),
+              Color(0xFFE8C547),
+              Color(0xFFA88615),
             ],
           ),
         ),
         child: Stack(
           children: [
-            // Floating note decorations
             ..._buildFloatingNotes(),
-
-            // Main content
             Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Animated logo
                   AnimatedBuilder(
                     animation: _logoController,
                     builder: (context, child) {
@@ -149,10 +141,7 @@ class _SplashScreenState extends State<SplashScreen>
                       );
                     },
                   ),
-
                   const SizedBox(height: 40),
-
-                  // Animated text
                   SlideTransition(
                     position: _textSlide,
                     child: FadeTransition(
@@ -186,23 +175,19 @@ class _SplashScreenState extends State<SplashScreen>
                             ),
                           ),
                           const SizedBox(height: 30),
-                          // Feature badges
                           Wrap(
                             spacing: 10,
                             children: [
-                              _buildFeatureBadge('🎤 Voice'),
-                              _buildFeatureBadge('🖼️ Images'),
-                              _buildFeatureBadge('🤖 AI'),
+                              _buildFeatureBadge('Voice'),
+                              _buildFeatureBadge('Images'),
+                              _buildFeatureBadge('AI'),
                             ],
                           ),
                         ],
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 60),
-
-                  // Loading indicator
                   FadeTransition(
                     opacity: _textOpacity,
                     child: AnimatedBuilder(
@@ -265,13 +250,11 @@ class _SplashScreenState extends State<SplashScreen>
           child: Stack(
             alignment: Alignment.center,
             children: [
-              // Note icon
               Icon(
                 Icons.note_alt_rounded,
                 size: 70,
                 color: const Color(0xFFC39E18),
               ),
-              // Sparkle
               Positioned(
                 top: 20,
                 right: 25,
@@ -309,7 +292,6 @@ class _SplashScreenState extends State<SplashScreen>
 
   List<Widget> _buildFloatingNotes() {
     return [
-      // Top left note
       AnimatedBuilder(
         animation: _noteFloat,
         builder: (context, child) {
@@ -320,7 +302,6 @@ class _SplashScreenState extends State<SplashScreen>
           );
         },
       ),
-      // Top right note
       AnimatedBuilder(
         animation: _noteFloat,
         builder: (context, child) {
@@ -331,7 +312,6 @@ class _SplashScreenState extends State<SplashScreen>
           );
         },
       ),
-      // Bottom left note
       AnimatedBuilder(
         animation: _noteFloat,
         builder: (context, child) {
@@ -342,7 +322,6 @@ class _SplashScreenState extends State<SplashScreen>
           );
         },
       ),
-      // Bottom right note
       AnimatedBuilder(
         animation: _noteFloat,
         builder: (context, child) {

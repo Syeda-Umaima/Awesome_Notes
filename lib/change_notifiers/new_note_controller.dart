@@ -1,4 +1,3 @@
-// lib/change_notifiers/new_note_controller.dart
 import 'dart:convert';
 import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
@@ -8,8 +7,10 @@ import 'package:provider/provider.dart';
 import '../models/note_model.dart';
 import 'notes_provider.dart';
 
+/// Controls the state for creating and editing notes
 class NewNoteController extends ChangeNotifier {
   NoteModel? _noteModel;
+
   set noteModel(NoteModel? value) {
     _noteModel = value;
     _title = value?.title ?? '';
@@ -67,10 +68,13 @@ class NewNoteController extends ChangeNotifier {
 
   bool get isNewNote => _noteModel == null;
 
+  /// Check if there are changes worth saving
   bool get canSaveNote {
     final String? newTitle = title.isNotEmpty ? title : null;
     final String newContentStr = content.toPlainText().trim();
-    final String? newContentJson = newContentStr.isNotEmpty ? jsonEncode(content.toDelta().toJson()) : null;
+    final String? newContentJson = newContentStr.isNotEmpty
+        ? jsonEncode(content.toDelta().toJson())
+        : null;
     bool canSave = newTitle != null || newContentJson != null || _tags.isNotEmpty;
 
     if (!isNewNote) {
@@ -85,7 +89,9 @@ class NewNoteController extends ChangeNotifier {
   void saveNote(BuildContext context) {
     final String? newTitle = title.isNotEmpty ? title : null;
     final String newContentStr = content.toPlainText().trim();
-    final String? newContentJson = newContentStr.isNotEmpty ? jsonEncode(content.toDelta().toJson()) : null;
+    final String? newContentJson = newContentStr.isNotEmpty
+        ? jsonEncode(content.toDelta().toJson())
+        : null;
     final int now = DateTime.now().microsecondsSinceEpoch;
 
     final NoteModel noteModel = NoteModel(

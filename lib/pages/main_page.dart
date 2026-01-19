@@ -1,4 +1,3 @@
-// lib/pages/main_page.dart
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
@@ -19,8 +18,10 @@ import '../widgets/search_field.dart';
 import '../widgets/view_options.dart';
 import 'new_or_edit_note_page.dart';
 
+/// Main screen displaying the user's notes with search and filtering
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
+
   @override
   State<MainPage> createState() => _MainPageState();
 }
@@ -30,18 +31,20 @@ class _MainPageState extends State<MainPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final provider = context.read<NotesProvider>();
-      final box = Hive.box<NoteModel>('notesbox');
-      final currentUserId = FirebaseAuth.instance.currentUser?.uid;
-
-      // Filter notes to only show current user's notes
-      final hiveNotes = box.values
-          .where((note) => note.userId == currentUserId)
-          .toList()
-        ..sort((a, b) => (b.dateCreated ?? 0)
-            .compareTo(a.dateCreated ?? 0));
-      provider.setNotes(hiveNotes);
+      _loadUserNotes();
     });
+  }
+
+  void _loadUserNotes() {
+    final provider = context.read<NotesProvider>();
+    final box = Hive.box<NoteModel>('notesbox');
+    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+
+    final hiveNotes = box.values
+        .where((note) => note.userId == currentUserId)
+        .toList()
+      ..sort((a, b) => (b.dateCreated ?? 0).compareTo(a.dateCreated ?? 0));
+    provider.setNotes(hiveNotes);
   }
 
   @override

@@ -1,4 +1,3 @@
-// lib/pages/new_or_edit_note_page.dart
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:convert';
@@ -25,6 +24,7 @@ import '../widgets/note_metadata.dart';
 import '../widgets/note_toolbar.dart';
 import '../widgets/voice_input_dialog.dart';
 
+/// Screen for creating new notes or editing existing ones
 class NewOrEditNotePage extends StatefulWidget {
   const NewOrEditNotePage({required this.isNewNote, super.key});
 
@@ -42,58 +42,52 @@ class _NewOrEditNotePageState extends State<NewOrEditNotePage> {
   late final ScrollController scrollController;
 
   final ImagePicker _picker = ImagePicker();
-
-  // Image handling
   String? imagePath;
   Uint8List? webImageBytes;
-
-  // New feature state
   int _selectedColorIndex = 0;
   DateTime? _reminderDateTime;
 
   @override
-  @override
-void initState() {
-  super.initState();
+  void initState() {
+    super.initState();
 
-  newNoteController = context.read<NewNoteController>();
-  titleController = TextEditingController(text: newNoteController.title);
+    newNoteController = context.read<NewNoteController>();
+    titleController = TextEditingController(text: newNoteController.title);
 
-  final note = newNoteController.noteModel;
-  if (!widget.isNewNote && note != null && note.imagePath != null) {
-    try {
-      if (kIsWeb || note.imagePath!.length > 200) {
-        // Base64 encoded (web)
-        webImageBytes = base64Decode(note.imagePath!);
-        imagePath = null;
-      } else {
-        // Local file path
-        imagePath = note.imagePath;
-        webImageBytes = null;
+    // Load existing image if editing a note
+    final note = newNoteController.noteModel;
+    if (!widget.isNewNote && note != null && note.imagePath != null) {
+      try {
+        if (kIsWeb || note.imagePath!.length > 200) {
+          webImageBytes = base64Decode(note.imagePath!);
+          imagePath = null;
+        } else {
+          imagePath = note.imagePath;
+          webImageBytes = null;
+        }
+      } catch (e) {
+        debugPrint('Error loading saved image: $e');
       }
-    } catch (e) {
-      debugPrint('Error loading saved image: $e');
     }
-  }
 
-  quillController = quill.QuillController.basic()
-    ..addListener(() {
-      newNoteController.content = quillController.document;
+    quillController = quill.QuillController.basic()
+      ..addListener(() {
+        newNoteController.content = quillController.document;
+      });
+
+    focusNode = FocusNode();
+    scrollController = ScrollController();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.isNewNote) {
+        focusNode.requestFocus();
+        newNoteController.readOnly = false;
+      } else {
+        newNoteController.readOnly = true;
+        quillController.document = newNoteController.content;
+      }
     });
-
-  focusNode = FocusNode();
-  scrollController = ScrollController();
-
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    if (widget.isNewNote) {
-      focusNode.requestFocus();
-      newNoteController.readOnly = false;
-    } else {
-      newNoteController.readOnly = true;
-      quillController.document = newNoteController.content;
-    }
-  });
-}
+  }
 
   @override
   void dispose() {
@@ -104,7 +98,6 @@ void initState() {
     super.dispose();
   }
 
-  // 🖼️ Pick and insert image
   Future<void> pickImage() async {
     try {
       final XFile? picked = await _picker.pickImage(
@@ -146,7 +139,6 @@ void initState() {
         index = quillController.document.length;
       }
 
-      // Insert a simple placeholder text for image
       quillController.document.insert(index, '\n[Image attached]\n');
 
       quillController.updateSelection(
@@ -158,13 +150,12 @@ void initState() {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('✅ Image added to note')),
+          const SnackBar(content: Text('Image added to note')),
         );
       }
     });
   }
 
-  // 🎤 Voice input - Show voice input dialog
   void _showVoiceInput() {
     showModalBottomSheet(
       context: context,
@@ -172,7 +163,6 @@ void initState() {
       backgroundColor: Colors.transparent,
       builder: (context) => VoiceInputDialog(
         onTextRecognized: (text) {
-          // Insert recognized text at cursor position
           final index = quillController.selection.baseOffset >= 0
               ? quillController.selection.baseOffset
               : quillController.document.length - 1;
@@ -185,14 +175,13 @@ void initState() {
           );
 
           ScaffoldMessenger.of(this.context).showSnackBar(
-            const SnackBar(content: Text('✅ Voice text inserted')),
+            const SnackBar(content: Text('Voice text inserted')),
           );
         },
       ),
     );
   }
 
-  // 🤖 Show AI Features Bottom Sheet
   void _showAIFeatures() {
     final content = quillController.document.toPlainText().trim();
     showModalBottomSheet(
@@ -203,17 +192,15 @@ void initState() {
         title: titleController.text,
         content: content,
         onSummaryGenerated: (summary) {
-          // Insert summary at cursor position
           final index = quillController.selection.baseOffset >= 0
               ? quillController.selection.baseOffset
               : quillController.document.length;
-          quillController.document.insert(index, '\n\n📝 Summary:\n$summary\n');
+          quillController.document.insert(index, '\n\nSummary:\n$summary\n');
           ScaffoldMessenger.of(this.context).showSnackBar(
-            const SnackBar(content: Text('✅ Summary added to note')),
+            const SnackBar(content: Text('Summary added to note')),
           );
         },
         onTagsSuggested: (tags) {
-          // Clear existing tags and add new ones
           while (newNoteController.tags.isNotEmpty) {
             newNoteController.removeTag(0);
           }
@@ -221,21 +208,20 @@ void initState() {
             newNoteController.addTag(tag);
           }
           ScaffoldMessenger.of(this.context).showSnackBar(
-            SnackBar(content: Text('✅ Tags applied: ${tags.join(", ")}')),
+            SnackBar(content: Text('Tags applied: ${tags.join(", ")}')),
           );
         },
         onTitleSuggested: (title) {
           titleController.text = title;
           newNoteController.title = title;
           ScaffoldMessenger.of(this.context).showSnackBar(
-            const SnackBar(content: Text('✅ Title updated')),
+            const SnackBar(content: Text('Title updated')),
           );
         },
       ),
     );
   }
 
-  // 🎨 Show Color Picker
   void _showColorPicker() {
     showModalBottomSheet(
       context: context,
@@ -247,14 +233,13 @@ void initState() {
             _selectedColorIndex = index;
           });
           ScaffoldMessenger.of(this.context).showSnackBar(
-            const SnackBar(content: Text('✅ Note color changed')),
+            const SnackBar(content: Text('Note color changed')),
           );
         },
       ),
     );
   }
 
-  // ⏰ Show Reminder Picker
   void _showReminderPicker() {
     showModalBottomSheet(
       context: context,
@@ -279,7 +264,7 @@ void initState() {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              '⏰ Reminder set for ${selectedDateTime.day}/${selectedDateTime.month}/${selectedDateTime.year} at ${selectedDateTime.hour}:${selectedDateTime.minute.toString().padLeft(2, '0')}',
+              'Reminder set for ${selectedDateTime.day}/${selectedDateTime.month}/${selectedDateTime.year} at ${selectedDateTime.hour}:${selectedDateTime.minute.toString().padLeft(2, '0')}',
             ),
           ),
         );
@@ -287,7 +272,6 @@ void initState() {
     });
   }
 
-  // Build feature button widget
   Widget _buildFeatureButton({
     required IconData icon,
     required String label,
@@ -318,67 +302,66 @@ void initState() {
     );
   }
 
-  // 💾 Save note properly to Hive
   Future<void> _saveNote() async {
-  try {
-    final noteBox = Hive.box<NoteModel>('notesbox');
-    final plainText = quillController.document.toPlainText().trim();
+    try {
+      final noteBox = Hive.box<NoteModel>('notesbox');
+      final plainText = quillController.document.toPlainText().trim();
 
-    String? storedImagePath;
-    if (kIsWeb && webImageBytes != null) {
-      storedImagePath = base64Encode(webImageBytes!);
-    } else if (!kIsWeb && imagePath != null) {
-      storedImagePath = imagePath;
-    }
+      String? storedImagePath;
+      if (kIsWeb && webImageBytes != null) {
+        storedImagePath = base64Encode(webImageBytes!);
+      } else if (!kIsWeb && imagePath != null) {
+        storedImagePath = imagePath;
+      }
 
-    NoteModel hiveNote;
-    if (widget.isNewNote) {
-      final currentUserId = FirebaseAuth.instance.currentUser?.uid;
-      hiveNote = NoteModel(
-        title: titleController.text.trim().isEmpty ? null : titleController.text.trim(),
-        description: plainText.isEmpty ? null : plainText,
-        contentJson: jsonEncode(quillController.document.toDelta().toJson()),
-        dateCreated: DateTime.now().microsecondsSinceEpoch,
-        dateModified: DateTime.now().microsecondsSinceEpoch,
-        imagePath: storedImagePath,
-        tags: newNoteController.tags,
-        userId: currentUserId,
-      );
-      await noteBox.add(hiveNote);
-    } else {
-      hiveNote = newNoteController.noteModel!;
-      hiveNote
-        ..title = titleController.text.trim().isEmpty ? null : titleController.text.trim()
-        ..description = plainText.isEmpty ? null : plainText
-        ..contentJson = jsonEncode(quillController.document.toDelta().toJson())
-        ..dateModified = DateTime.now().microsecondsSinceEpoch
-        ..imagePath = storedImagePath
-        ..tags = newNoteController.tags;
-      await hiveNote.save();
-    }
+      NoteModel hiveNote;
+      if (widget.isNewNote) {
+        final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+        hiveNote = NoteModel(
+          title: titleController.text.trim().isEmpty ? null : titleController.text.trim(),
+          description: plainText.isEmpty ? null : plainText,
+          contentJson: jsonEncode(quillController.document.toDelta().toJson()),
+          dateCreated: DateTime.now().microsecondsSinceEpoch,
+          dateModified: DateTime.now().microsecondsSinceEpoch,
+          imagePath: storedImagePath,
+          tags: newNoteController.tags,
+          userId: currentUserId,
+        );
+        await noteBox.add(hiveNote);
+      } else {
+        hiveNote = newNoteController.noteModel!;
+        hiveNote
+          ..title = titleController.text.trim().isEmpty ? null : titleController.text.trim()
+          ..description = plainText.isEmpty ? null : plainText
+          ..contentJson = jsonEncode(quillController.document.toDelta().toJson())
+          ..dateModified = DateTime.now().microsecondsSinceEpoch
+          ..imagePath = storedImagePath
+          ..tags = newNoteController.tags;
+        await hiveNote.save();
+      }
 
-    if (mounted) {
-      final currentUserId = FirebaseAuth.instance.currentUser?.uid;
-      final userNotes = noteBox.values
-          .where((note) => note.userId == currentUserId)
-          .toList();
-      context.read<NotesProvider>().setNotes(userNotes);
-    }
+      if (mounted) {
+        final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+        final userNotes = noteBox.values
+            .where((note) => note.userId == currentUserId)
+            .toList();
+        context.read<NotesProvider>().setNotes(userNotes);
+      }
 
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('✅ Note saved successfully!')),
-      );
-    }
-  } catch (e) {
-    debugPrint('❌ Error saving to Hive: $e');
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('⚠️ Error saving note: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Note saved successfully!')),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error saving to Hive: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error saving note: $e')),
+        );
+      }
     }
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -444,7 +427,6 @@ void initState() {
           padding: const EdgeInsets.all(8.0),
           child: Column(
             children: [
-              // Title Field
               Selector<NewNoteController, bool>(
                 selector: (context, c) => c.readOnly,
                 builder: (context, readOnly, child) => TextField(
@@ -470,7 +452,7 @@ void initState() {
                 child: Divider(color: gray500, thickness: 2),
               ),
 
-              // ✅ Image Preview
+              // Image preview
               if (kIsWeb && webImageBytes != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 8.0),
@@ -506,7 +488,6 @@ void initState() {
                   ),
                 ),
 
-              // Quill Editor
               Expanded(
                 child: Selector<NewNoteController, bool>(
                   selector: (_, c) => c.readOnly,
@@ -525,7 +506,6 @@ void initState() {
                           children: [
                             NoteToolbar(controller: quillController),
                             const SizedBox(height: 10),
-                            // Enhanced Feature Toolbar
                             Container(
                               padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
                               decoration: BoxDecoration(
@@ -535,28 +515,24 @@ void initState() {
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                 children: [
-                                  // 🎤 Voice Input
                                   _buildFeatureButton(
                                     icon: Icons.mic_none_outlined,
                                     label: 'Voice',
                                     color: Colors.grey.shade700,
                                     onTap: _showVoiceInput,
                                   ),
-                                  // 🖼️ Add Image
                                   _buildFeatureButton(
                                     icon: Icons.image_outlined,
                                     label: 'Image',
                                     color: Colors.grey.shade700,
                                     onTap: pickImage,
                                   ),
-                                  // 🤖 AI Features
                                   _buildFeatureButton(
                                     icon: Icons.auto_awesome,
                                     label: 'AI',
                                     color: const Color(0xFFC39E18),
                                     onTap: _showAIFeatures,
                                   ),
-                                  // 🎨 Color Picker
                                   _buildFeatureButton(
                                     icon: Icons.palette_outlined,
                                     label: 'Color',
@@ -565,7 +541,6 @@ void initState() {
                                         : NoteColorPicker.getColor(_selectedColorIndex),
                                     onTap: _showColorPicker,
                                   ),
-                                  // ⏰ Reminder
                                   _buildFeatureButton(
                                     icon: _reminderDateTime != null
                                         ? Icons.alarm_on

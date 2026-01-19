@@ -1,9 +1,9 @@
-// lib/widgets/voice_input_dialog.dart
 import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+/// Voice input dialog with real-time speech recognition
 class VoiceInputDialog extends StatefulWidget {
   final Function(String) onTextRecognized;
 
@@ -53,7 +53,6 @@ class _VoiceInputDialogState extends State<VoiceInputDialog>
   }
 
   Future<void> _initSpeech() async {
-    // Request microphone permission
     final status = await Permission.microphone.request();
     if (status != PermissionStatus.granted) {
       setState(() {
@@ -93,7 +92,6 @@ class _VoiceInputDialogState extends State<VoiceInputDialog>
       );
 
       if (_isInitialized) {
-        // Get available locales
         _locales = await _speech.locales();
         final systemLocale = await _speech.systemLocale();
         _selectedLocaleId = systemLocale?.localeId ?? 'en_US';
@@ -133,9 +131,7 @@ class _VoiceInputDialogState extends State<VoiceInputDialog>
       pauseFor: const Duration(seconds: 3),
       partialResults: true,
       localeId: _selectedLocaleId,
-      onSoundLevelChange: (level) {
-        // Could use this for visual feedback
-      },
+      onSoundLevelChange: (level) {},
       cancelOnError: false,
       listenMode: stt.ListenMode.dictation,
     );
@@ -183,7 +179,6 @@ class _VoiceInputDialogState extends State<VoiceInputDialog>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Header
           Row(
             children: [
               Container(
@@ -211,8 +206,6 @@ class _VoiceInputDialogState extends State<VoiceInputDialog>
             ],
           ),
           const SizedBox(height: 20),
-
-          // Mic button with pulse animation
           GestureDetector(
             onTap: _isListening ? _stopListening : _startListening,
             child: AnimatedBuilder(
@@ -244,8 +237,6 @@ class _VoiceInputDialogState extends State<VoiceInputDialog>
             ),
           ),
           const SizedBox(height: 16),
-
-          // Status message
           Text(
             _statusMessage,
             style: TextStyle(
@@ -254,8 +245,6 @@ class _VoiceInputDialogState extends State<VoiceInputDialog>
             ),
           ),
           const SizedBox(height: 8),
-
-          // Confidence indicator
           if (_confidence > 0)
             Text(
               'Confidence: ${(_confidence * 100).toStringAsFixed(0)}%',
@@ -265,8 +254,6 @@ class _VoiceInputDialogState extends State<VoiceInputDialog>
               ),
             ),
           const SizedBox(height: 20),
-
-          // Recognized text area
           Container(
             width: double.infinity,
             constraints: const BoxConstraints(minHeight: 100, maxHeight: 200),
@@ -293,8 +280,6 @@ class _VoiceInputDialogState extends State<VoiceInputDialog>
             ),
           ),
           const SizedBox(height: 20),
-
-          // Action buttons
           Row(
             children: [
               Expanded(
@@ -326,8 +311,6 @@ class _VoiceInputDialogState extends State<VoiceInputDialog>
             ],
           ),
           const SizedBox(height: 10),
-
-          // Language selector
           if (_locales.isNotEmpty)
             ExpansionTile(
               title: const Text(

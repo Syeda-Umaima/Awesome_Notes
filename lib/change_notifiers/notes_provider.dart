@@ -1,8 +1,8 @@
-// lib/change_notifiers/notes_provider.dart
 import 'package:flutter/material.dart';
 import '../enums/order_option.dart';
 import '../models/note_model.dart';
 
+/// Manages the notes list state with search and sorting capabilities
 class NotesProvider extends ChangeNotifier {
   final List<NoteModel> _notes = [];
 
